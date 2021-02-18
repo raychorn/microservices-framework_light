@@ -49,8 +49,8 @@ service_runner = ServiceRunner(__env__.get('plugins'), logger=None, debug=is_deb
 @app.route('/', methods=['GET', 'POST', 'PUT', 'DELETE'], defaults={'path': ''})
 @app.route('/<path:path>', methods=['GET', 'POST', 'PUT', 'DELETE'])
 def catch_all(path):
-    the_response = {"path": path}
     the_path = path.split('/')
+    the_response = {"path": '/'.join(the_path[1:])}
     __fp_plugins__ = [__env__.get('plugins')]
     print('request.method -> {}'.format(request.method))
     if (request.method in ['POST', 'PUT', 'DELETE']):
@@ -58,8 +58,14 @@ def catch_all(path):
             d = request.get_json()
             print(json.dumps(d, indent=3))
             print('-'*30)
+            d = service_runner.resolve(request, data=d, path=the_path, plugins=__fp_plugins__)
+            if (d is not None):
+                the_response['response'] = d
+            else:
+                return json.dumps({'success':False}), 404, {'ContentType':'application/json'}
         except Exception as ex:
             print(_utils.formattedException(details=ex))
+            return json.dumps({'success':False, 'reason': str(ex)}), 404, {'ContentType':'application/json'}
             
     elif (request.method in ['GET']):
         try:
@@ -93,30 +99,16 @@ def catch_all(path):
                                 the_response['__plugins__'][fp_plugins]['aliases'] = service_runner.aliases.get(fp_plugins)
                                 the_response['__plugins__'][fp_plugins]['status'] = 'OK'
                 else:
-                    d = None
-                    func_name = the_path[2]
-                    the_args = the_path[3:]
-                    for root in __fp_plugins__:
-                        endpoints = expose.get_endpoints(for_root=root).get(root, {})
-                        d = endpoints.get(request.method, {})
-                        if (module_name in list(service_runner.aliases.get(root, {}).keys())):
-                            module_name = service_runner.aliases.get(root, {}).get(module_name)
-                        if (module_name in list(service_runner.modules.get(root, {}).keys())):
-                            fq_func_name = '{}.{}'.format(module_name, func_name)
-                            d = d.get(fq_func_name, None)
-                            if (d is not None) and (len(d) > 0):
-                                break
+                    d = service_runner.resolve(request, path=the_path, plugins=__fp_plugins__)
                     if (d is not None):
-                        data = {}
-                        for k,v in request.args.items():
-                            data[k] = v
-                        for i in range(1, len(the_args)+1):
-                            data['p{}'.format(i)] = the_args[i-1]
-                        the_response['response'] = service_runner.exec(module_name, func_name, **data)
+                        the_response['response'] = d
+                    else:
+                        return json.dumps({'success':False}), 404, {'ContentType':'application/json'}
             else:
                 return json.dumps({'success':False}), 404, {'ContentType':'application/json'}
         except Exception as ex:
             print(_utils.formattedException(details=ex))
+            return json.dumps({'success':False, 'reason': str(ex)}), 404, {'ContentType':'application/json'}
     return Response(json.dumps(dictutils.json_cleaner(the_response)), mimetype='application/json')
 
 if (__name__ == '__main__'):
