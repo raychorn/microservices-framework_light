@@ -1,7 +1,6 @@
 import os
 import sys
 from flask import Flask, request, Response
-from flask.ext.runner import Runner
 
 pylib = '/home/raychorn/projects/python-projects/private_vyperlogix_lib3'
 if (not any([f == pylib for f in sys.path])):
@@ -11,7 +10,7 @@ from vyperlogix.env import environ
 from vyperlogix.misc import _utils
 from vyperlogix.decorators import expose
 from vyperlogix.iterators.dict import dictutils
-from vyperlogix.django.services import ServiceRunner
+from vyperlogix.plugins.services import ServiceRunnerLite as ServiceRunner
 from vyperlogix.plugins import handler as plugins_handler
 
 import mujson as json
@@ -40,13 +39,12 @@ environ.load_env(env_path=env_path, environ=os.environ, cwd=env_path, verbose=Tr
 
 assert os.path.exists(__env__.get('plugins')), 'Missing the plugins path, check your .env file.'
 
-__debug__ = False
+is_debugging = __env__.get('debug', False)
+is_debugging = True if (is_debugging) else False
 
 app = Flask(__name__)
-runner = Runner(app)
 
-plugins_manager = plugins_handler.PluginManager(__env__.get('plugins'), debug=True, logger=None)
-service_runner = plugins_manager.get_runner()
+service_runner = ServiceRunner(__env__.get('plugins'), logger=None, debug=is_debugging)
 
 @app.route('/', methods=['GET', 'POST', 'PUT', 'DELETE'], defaults={'path': ''})
 @app.route('/<path:path>', methods=['GET', 'POST', 'PUT', 'DELETE'])
@@ -70,7 +68,7 @@ def catch_all(path):
             if (func == '__directory__'):
                 if (uuid == __env__.get('__uuid__')):
                     the_response['fpath'] = os.path.dirname(__file__)
-                    __fp_plugins__ = __env__.get('plugins')
+                    __fp_plugins__ = [__env__.get('plugins')]
                     the_response['__fp_plugins__'] = {}
                     for fp_plugins in __fp_plugins__:
                         the_response['__fp_plugins__'][fp_plugins] = {}
@@ -86,23 +84,17 @@ def catch_all(path):
                                 fOut.write('{}\n'.format('#'*40))
                                 fOut.write('\n\n')
                                 fOut.flush()
-                        runner = ServiceRunner(__fp_plugins__, logger=None, debug=__debug__)
-                        if (__debug__ or request.args.get('DEBUG', False)):
+                        if (is_debugging or request.args.get('DEBUG', False)):
                             the_response['__fp_plugins__'][fp_plugins]['query_params'] = request.args
-                            the_response['__fp_plugins__'][fp_plugins]['modules'] = runner.modules.get(fp_plugins)
+                            the_response['__fp_plugins__'][fp_plugins]['modules'] = service_runner.modules.get(fp_plugins)
                             the_response['__fp_plugins__'][fp_plugins]['endpoints'] = expose.get_endpoints(for_root=fp_plugins)
-                            the_response['__fp_plugins__'][fp_plugins]['imports'] = runner.imports.get(fp_plugins)
-                            the_response['__fp_plugins__'][fp_plugins]['aliases'] = runner.aliases.get(fp_plugins)
+                            the_response['__fp_plugins__'][fp_plugins]['imports'] = service_runner.imports.get(fp_plugins)
+                            the_response['__fp_plugins__'][fp_plugins]['aliases'] = service_runner.aliases.get(fp_plugins)
                             the_response['__fp_plugins__'][fp_plugins]['status'] = 'OK'
         except Exception as ex:
             print(_utils.formattedException(details=ex))
     return Response(json.dumps(dictutils.json_cleaner(the_response)), mimetype='application/json')
 
 if (__name__ == '__main__'):
-    __help__ = '--help'
-    sys.argv.append(__help__)
-    if (not __help__ in sys.argv):
-        if (not any([str(a).find('-p ') > -1 for a in sys.argv])):
-            sys.argv.append('-p {}'.format(__env__.get('port')))
-    runner.run()
+    app.run(host=__env__.get('host', '127.0.0.1'), port=__env__.get('port', '5000'), load_dotenv=False, debug=is_debugging)
     
