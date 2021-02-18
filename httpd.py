@@ -70,8 +70,8 @@ def catch_all(path):
     elif (request.method in ['GET']):
         try:
             the_response = {}
-            uuid = the_path[0]
-            module_name = the_path[1]
+            uuid = the_path[0] if (len(the_path) > 0) else None
+            module_name = the_path[1] if (len(the_path) > 1) else None
             if (uuid == __env__.get('__uuid__')):
                 if (module_name == '__directory__'):
                     if (uuid == __env__.get('__uuid__')):
