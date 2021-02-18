@@ -96,5 +96,5 @@ def catch_all(path):
     return Response(json.dumps(dictutils.json_cleaner(the_response)), mimetype='application/json')
 
 if (__name__ == '__main__'):
-    app.run(host=__env__.get('host', '127.0.0.1'), port=__env__.get('port', '5000'), load_dotenv=False, debug=is_debugging)
+    app.run(host=__env__.get('host', '127.0.0.1'), port=__env__.get('port', '5000'), load_dotenv=False, debug=False)
     
