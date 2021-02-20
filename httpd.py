@@ -2,9 +2,15 @@ import os
 import sys
 from flask import Flask, request, Response
 
-pylib = '/home/raychorn/projects/python-projects/private_vyperlogix_lib3'
-if (not any([f == pylib for f in sys.path])):
-    sys.path.insert(0, pylib)
+import logging
+from logging.handlers import RotatingFileHandler
+
+from datetime import datetime
+
+if (os.environ.get('vyperlogix_lib3')):
+    pylib = os.environ.get('vyperlogix_lib3')
+    if (not any([f == pylib for f in sys.path])):
+        sys.path.insert(0, pylib)
     
 from vyperlogix.env import environ
 from vyperlogix.misc import _utils
@@ -14,6 +20,52 @@ from vyperlogix.plugins.services import ServiceRunnerLite as ServiceRunner
 from vyperlogix.plugins import handler as plugins_handler
 
 import mujson as json
+
+is_really_something = lambda s,t:s and t(s)
+something_greater_than_zero = lambda s:(s > 0)
+
+default_timestamp = lambda t:t.isoformat().replace(':', '').replace('-','').split('.')[0]
+
+is_uppercase = lambda ch:''.join([c for c in str(ch) if c.isupper()])
+
+def get_stream_handler(streamformat="%(asctime)s:%(levelname)s:%(message)s"):
+    stream = logging.StreamHandler()
+    stream.setLevel(logging.INFO)
+    stream.setFormatter(logging.Formatter(streamformat))
+    return stream
+
+    
+def setup_rotating_file_handler(logname, logfile, max_bytes, backup_count):
+    assert is_really_something(backup_count, something_greater_than_zero), 'Missing backup_count?'
+    assert is_really_something(max_bytes, something_greater_than_zero), 'Missing max_bytes?'
+    ch = RotatingFileHandler(logfile, 'a', max_bytes, backup_count)
+    l = logging.getLogger(logname)
+    l.addHandler(ch)
+    return l
+
+production_token = 'production'
+
+base_filename = os.path.splitext(os.path.basename(__file__))[0]
+
+log_filename = '{}{}{}{}{}{}{}_{}.log'.format('logs', os.sep, base_filename, os.sep, production_token, os.sep, base_filename, default_timestamp(datetime.utcnow()))
+
+if not os.path.exists(os.path.dirname(log_filename)):
+    os.makedirs(os.path.dirname(log_filename))
+
+if (os.path.exists(log_filename)):
+    os.remove(log_filename)
+
+log_format = ('[%(asctime)s] %(levelname)-8s %(name)-12s %(message)s')
+logging.basicConfig(
+    level=logging.DEBUG,
+    format=log_format,
+    filename=(log_filename),
+)
+
+logger = setup_rotating_file_handler(base_filename, log_filename, (1024*1024*1024), 10)
+logger.addHandler(get_stream_handler())
+
+
 
 __env__ = {}
 env_literals = []
@@ -35,7 +87,7 @@ def get_environ_keys(*args, **kwargs):
     return True
 
 env_path = './.env'
-environ.load_env(env_path=env_path, environ=os.environ, cwd=env_path, verbose=True, logger=None, ignoring_re='.git|.venv|__pycache__', callback=lambda *args, **kwargs:get_environ_keys(args, **kwargs))
+environ.load_env(env_path=env_path, environ=os.environ, cwd=env_path, verbose=False, logger=logger, ignoring_re='.git|.venv|__pycache__', callback=lambda *args, **kwargs:get_environ_keys(args, **kwargs))
 
 assert os.path.exists(__env__.get('plugins')), 'Missing the plugins path, check your .env file.'
 
@@ -44,7 +96,7 @@ is_debugging = True if (is_debugging) else False
 
 app = Flask(__name__)
 
-service_runner = ServiceRunner(__env__.get('plugins'), logger=None, debug=is_debugging)
+service_runner = ServiceRunner(__env__.get('plugins'), logger=logger, debug=is_debugging)
 
 @app.route('/', methods=['GET', 'POST', 'PUT', 'DELETE'], defaults={'path': ''})
 @app.route('/<path:path>', methods=['GET', 'POST', 'PUT', 'DELETE'])

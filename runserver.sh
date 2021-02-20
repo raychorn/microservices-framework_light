@@ -31,7 +31,7 @@ do_it(){
     export PYTHONPATH=$dir1:$vyperlib
     #ls -la
     #python -m debug1
-    gunicorn -c $dir1/gunicorn/config.py --workers 4 --max-requests 1000 httpd:app
+    gunicorn -c $dir1/gunicorn/config.py --workers 4 httpd:app # --max-requests 1000
 }
 
 do_it #>./logs/runserver_report.txt 2>&1
