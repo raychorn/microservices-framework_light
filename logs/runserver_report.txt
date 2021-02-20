@@ -1,0 +1,188 @@
+./runserver.sh: 14: [[: Permission denied
+./runserver.sh: 21: [[: Permission denied
+[2021-02-19 17:15:43 -0700] [5570] [INFO] Starting gunicorn 20.0.4
+[2021-02-19 17:15:43 -0700] [5570] [INFO] Listening at: http://0.0.0.0:9999 (5570)
+[2021-02-19 17:15:43 -0700] [5570] [INFO] Using worker: gevent
+[2021-02-19 17:15:43 -0700] [5570] [INFO] Server is ready. Spawning workers
+[2021-02-19 17:15:43 -0700] [5577] [INFO] Booting worker with pid: 5577
+[2021-02-19 17:15:43 -0700] [5577] [INFO] Worker spawned (pid: 5577)
+[2021-02-19 17:15:43 -0700] [5578] [INFO] Booting worker with pid: 5578
+[2021-02-19 17:15:43 -0700] [5578] [INFO] Worker spawned (pid: 5578)
+[2021-02-19 17:15:43 -0700] [5579] [INFO] Booting worker with pid: 5579
+[2021-02-19 17:15:43 -0700] [5579] [INFO] Worker spawned (pid: 5579)
+[2021-02-19 17:15:43 -0700] [5580] [INFO] Booting worker with pid: 5580
+[2021-02-19 17:15:43 -0700] [5580] [INFO] Worker spawned (pid: 5580)
+[2021-02-19 17:16:18 -0700] [5579] [INFO] worker received INT or QUIT signal
+[2021-02-19 17:16:18 -0700] [5580] [INFO] worker received INT or QUIT signal
+[2021-02-19 17:16:18 -0700] [5578] [INFO] worker received INT or QUIT signal
+[2021-02-19 17:16:18 -0700] [5577] [INFO] worker received INT or QUIT signal
+[2021-02-19 17:16:18 -0700] [5570] [INFO] Handling signal: int
+[2021-02-19 17:16:18 -0700] [5577] [INFO] worker received INT or QUIT signal
+[2021-02-19 17:16:18 -0700] [5578] [INFO] worker received INT or QUIT signal
+[2021-02-19 17:16:18 -0700] [5579] [INFO] worker received INT or QUIT signal
+[2021-02-19 17:16:18 -0700] [5580] [INFO] worker received INT or QUIT signal
+[2021-02-19 17:16:18 -0700] [5577] [INFO] Worker exiting (pid: 5577)
+[2021-02-19 17:16:18 -0700] [5578] [INFO] Worker exiting (pid: 5578)
+[2021-02-19 17:16:18 -0700] [5579] [INFO] Worker exiting (pid: 5579)
+(1) load_env.BEGIN: ./.env
+(2) load_env.callback plugins -> /home/raychorn/projects/python-projects/private_microservice_plugins1
+(4) load_env :: plugins -> /home/raychorn/projects/python-projects/private_microservice_plugins1
+
+(2) load_env.callback __uuid__ -> 4a1bf01e-0693-48c5-a52b-fc275205c1d8
+(4) load_env :: __uuid__ -> 4a1bf01e-0693-48c5-a52b-fc275205c1d8
+
+(2) load_env.callback host -> 0.0.0.0
+(4) load_env :: host -> 0.0.0.0
+
+(2) load_env.callback port -> 9999
+(4) load_env :: port -> 9999
+
+(2) load_env.callback VYPERAPI_URL -> $host:$port
+(4) load_env :: VYPERAPI_URL -> $host:$port
+
+(2) load_env.callback debug -> 1
+(4) load_env :: debug -> 1
+
+(5) load_env.END!! ./.env
+DEBUG: environ -> None
+DEBUG: environ -> None
+DEBUG: environ -> None
+(1) load_env.BEGIN: ./.env
+(2) load_env.callback plugins -> /home/raychorn/projects/python-projects/private_microservice_plugins1
+(4) load_env :: plugins -> /home/raychorn/projects/python-projects/private_microservice_plugins1
+
+(2) load_env.callback __uuid__ -> 4a1bf01e-0693-48c5-a52b-fc275205c1d8
+(4) load_env :: __uuid__ -> 4a1bf01e-0693-48c5-a52b-fc275205c1d8
+
+(2) load_env.callback host -> 0.0.0.0
+(4) load_env :: host -> 0.0.0.0
+
+(2) load_env.callback port -> 9999
+(4) load_env :: port -> 9999
+
+(2) load_env.callback VYPERAPI_URL -> $host:$port
+(4) load_env :: VYPERAPI_URL -> $host:$port
+
+(2) load_env.callback debug -> 1
+(4) load_env :: debug -> 1
+
+(5) load_env.END!! ./.env
+DEBUG: environ -> None
+DEBUG: environ -> None
+DEBUG: environ -> None
+(1) load_env.BEGIN: ./.env
+(2) load_env.callback plugins -> /home/raychorn/projects/python-projects/private_microservice_plugins1
+(4) load_env :: plugins -> /home/raychorn/projects/python-projects/private_microservice_plugins1
+
+(2) load_env.callback __uuid__ -> 4a1bf01e-0693-48c5-a52b-fc275205c1d8
+(4) load_env :: __uuid__ -> 4a1bf01e-0693-48c5-a52b-fc275205c1d8
+
+(2) load_env.callback host -> 0.0.0.0
+(4) load_env :: host -> 0.0.0.0
+
+(2) load_env.callback port -> 9999
+(4) load_env :: port -> 9999
+
+(2) load_env.callback VYPERAPI_URL -> $host:$port
+(4) load_env :: VYPERAPI_URL -> $host:$port
+
+(2) load_env.callback debug -> 1
+(4) load_env :: debug -> 1
+
+(5) load_env.END!! ./.env
+DEBUG: environ -> None
+DEBUG: environ -> None
+DEBUG: environ -> None
+[2021-02-19 17:16:18 -0700] [5580] [INFO] Worker exiting (pid: 5580)
+(1) load_env.BEGIN: ./.env
+(2) load_env.callback plugins -> /home/raychorn/projects/python-projects/private_microservice_plugins1
+(4) load_env :: plugins -> /home/raychorn/projects/python-projects/private_microservice_plugins1
+
+(2) load_env.callback __uuid__ -> 4a1bf01e-0693-48c5-a52b-fc275205c1d8
+(4) load_env :: __uuid__ -> 4a1bf01e-0693-48c5-a52b-fc275205c1d8
+
+(2) load_env.callback host -> 0.0.0.0
+(4) load_env :: host -> 0.0.0.0
+
+(2) load_env.callback port -> 9999
+(4) load_env :: port -> 9999
+
+(2) load_env.callback VYPERAPI_URL -> $host:$port
+(4) load_env :: VYPERAPI_URL -> $host:$port
+
+(2) load_env.callback debug -> 1
+(4) load_env :: debug -> 1
+
+(5) load_env.END!! ./.env
+DEBUG: environ -> None
+DEBUG: environ -> None
+DEBUG: environ -> None
+Traceback (most recent call last):
+Traceback (most recent call last):
+Traceback (most recent call last):
+Traceback (most recent call last):
+  File "/home/raychorn/projects/python-projects/microservices-framework_light/.venv391/lib/python3.9/site-packages/gevent/monkey.py", line 883, in _shutdown
+    sleep()
+  File "/home/raychorn/projects/python-projects/microservices-framework_light/.venv391/lib/python3.9/site-packages/gevent/hub.py", line 159, in sleep
+    waiter.get()
+  File "src/gevent/_waiter.py", line 143, in gevent._gevent_c_waiter.Waiter.get
+  File "/home/raychorn/projects/python-projects/microservices-framework_light/.venv391/lib/python3.9/site-packages/gevent/monkey.py", line 883, in _shutdown
+    sleep()
+  File "src/gevent/_waiter.py", line 154, in gevent._gevent_c_waiter.Waiter.get
+  File "/home/raychorn/projects/python-projects/microservices-framework_light/.venv391/lib/python3.9/site-packages/gevent/monkey.py", line 883, in _shutdown
+    sleep()
+  File "/home/raychorn/projects/python-projects/microservices-framework_light/.venv391/lib/python3.9/site-packages/gevent/monkey.py", line 883, in _shutdown
+    sleep()
+  File "/home/raychorn/projects/python-projects/microservices-framework_light/.venv391/lib/python3.9/site-packages/gevent/hub.py", line 159, in sleep
+    waiter.get()
+  File "src/gevent/_greenlet_primitives.py", line 61, in gevent._gevent_c_greenlet_primitives.SwitchOutGreenletWithLoop.switch
+  File "/home/raychorn/projects/python-projects/microservices-framework_light/.venv391/lib/python3.9/site-packages/gevent/hub.py", line 159, in sleep
+    waiter.get()
+  File "/home/raychorn/projects/python-projects/microservices-framework_light/.venv391/lib/python3.9/site-packages/gevent/hub.py", line 159, in sleep
+    waiter.get()
+  File "src/gevent/_waiter.py", line 143, in gevent._gevent_c_waiter.Waiter.get
+  File "src/gevent/_greenlet_primitives.py", line 61, in gevent._gevent_c_greenlet_primitives.SwitchOutGreenletWithLoop.switch
+  File "src/gevent/_waiter.py", line 143, in gevent._gevent_c_waiter.Waiter.get
+  File "src/gevent/_waiter.py", line 143, in gevent._gevent_c_waiter.Waiter.get
+  File "src/gevent/_waiter.py", line 154, in gevent._gevent_c_waiter.Waiter.get
+  File "src/gevent/_greenlet_primitives.py", line 65, in gevent._gevent_c_greenlet_primitives.SwitchOutGreenletWithLoop.switch
+  File "src/gevent/_waiter.py", line 154, in gevent._gevent_c_waiter.Waiter.get
+  File "src/gevent/_waiter.py", line 154, in gevent._gevent_c_waiter.Waiter.get
+  File "src/gevent/_greenlet_primitives.py", line 61, in gevent._gevent_c_greenlet_primitives.SwitchOutGreenletWithLoop.switch
+  File "src/gevent/_greenlet_primitives.py", line 61, in gevent._gevent_c_greenlet_primitives.SwitchOutGreenletWithLoop.switch
+  File "src/gevent/_gevent_c_greenlet_primitives.pxd", line 35, in gevent._gevent_c_greenlet_primitives._greenlet_switch
+  File "src/gevent/_greenlet_primitives.py", line 61, in gevent._gevent_c_greenlet_primitives.SwitchOutGreenletWithLoop.switch
+  File "src/gevent/greenlet.py", line 906, in gevent._gevent_cgreenlet.Greenlet.run
+  File "src/gevent/_greenlet_primitives.py", line 61, in gevent._gevent_c_greenlet_primitives.SwitchOutGreenletWithLoop.switch
+  File "/home/raychorn/projects/python-projects/microservices-framework_light/.venv391/lib/python3.9/site-packages/gunicorn/workers/base.py", line 196, in handle_quit
+    sys.exit(0)
+  File "src/gevent/_greenlet_primitives.py", line 61, in gevent._gevent_c_greenlet_primitives.SwitchOutGreenletWithLoop.switch
+  File "src/gevent/_greenlet_primitives.py", line 61, in gevent._gevent_c_greenlet_primitives.SwitchOutGreenletWithLoop.switch
+  File "src/gevent/_greenlet_primitives.py", line 65, in gevent._gevent_c_greenlet_primitives.SwitchOutGreenletWithLoop.switch
+  File "src/gevent/_greenlet_primitives.py", line 65, in gevent._gevent_c_greenlet_primitives.SwitchOutGreenletWithLoop.switch
+  File "src/gevent/_greenlet_primitives.py", line 65, in gevent._gevent_c_greenlet_primitives.SwitchOutGreenletWithLoop.switch
+  File "src/gevent/_gevent_c_greenlet_primitives.pxd", line 35, in gevent._gevent_c_greenlet_primitives._greenlet_switch
+  File "src/gevent/_gevent_c_greenlet_primitives.pxd", line 35, in gevent._gevent_c_greenlet_primitives._greenlet_switch
+  File "src/gevent/_gevent_c_greenlet_primitives.pxd", line 35, in gevent._gevent_c_greenlet_primitives._greenlet_switch
+SystemExit: 0
+  File "src/gevent/greenlet.py", line 906, in gevent._gevent_cgreenlet.Greenlet.run
+  File "src/gevent/greenlet.py", line 906, in gevent._gevent_cgreenlet.Greenlet.run
+  File "src/gevent/greenlet.py", line 906, in gevent._gevent_cgreenlet.Greenlet.run
+  File "/home/raychorn/projects/python-projects/microservices-framework_light/.venv391/lib/python3.9/site-packages/gunicorn/workers/base.py", line 196, in handle_quit
+    sys.exit(0)
+  File "/home/raychorn/projects/python-projects/microservices-framework_light/.venv391/lib/python3.9/site-packages/gunicorn/workers/base.py", line 196, in handle_quit
+    sys.exit(0)
+  File "/home/raychorn/projects/python-projects/microservices-framework_light/.venv391/lib/python3.9/site-packages/gunicorn/workers/base.py", line 196, in handle_quit
+    sys.exit(0)
+SystemExit: 0
+SystemExit: 0
+SystemExit: 0
+2021-02-20T00:16:18Z <greenlet.greenlet object at 0x7f82aa611300 (otid=0x7f82aa92c380) current active started main> failed with SystemExit
+
+2021-02-20T00:16:18Z <greenlet.greenlet object at 0x7f82aa611300 (otid=0x7f82aa92c380) current active started main> failed with SystemExit
+
+2021-02-20T00:16:18Z <greenlet.greenlet object at 0x7f82aa611300 (otid=0x7f82aa92c380) current active started main> failed with SystemExit
+
+2021-02-20T00:16:18Z <greenlet.greenlet object at 0x7f82aa611300 (otid=0x7f82aa92c380) current active started main> failed with SystemExit
+
+[2021-02-19 17:16:19 -0700] [5570] [INFO] Shutting down: Master

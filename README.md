@@ -34,3 +34,7 @@ I can provide support when you provide a Sponsorship via the link.
 ## Usage <a name = "usage"></a>
 
 Add notes about how to use the system.
+
+## Deployment
+
+[deploy-flask-api-in-production-using-wsgi-gunicorn](https://www.javacodemonk.com/part-2-deploy-flask-api-in-production-using-wsgi-gunicorn-with-nginx-reverse-proxy-4cbeffdb)

@@ -8,7 +8,7 @@ GET http://127.0.0.1:9999/4a1bf01e-0693-48c5-a52b-fc275205c1d8/__directory__/ HT
 
 ###
 
-GET http://127.0.0.1:9999/4a1bf01e-0693-48c5-a52b-fc275205c1d8/v1/hello-world/ HTTP/1.1
+GET http://127.0.0.1:9999/4a1bf01e-0693-48c5-a52b-fc275205c1d8/word-cloud-cluster/get-all-articles/ HTTP/1.1
 
 ###
 
