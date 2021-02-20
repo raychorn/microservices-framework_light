@@ -1,6 +1,7 @@
 import os
 import sys
 from flask import Flask, request, Response
+from flask_cors import CORS
 
 import logging
 from logging.handlers import RotatingFileHandler
@@ -95,6 +96,7 @@ is_debugging = __env__.get('debug', False)
 is_debugging = True if (is_debugging) else False
 
 app = Flask(__name__)
+CORS(app)
 
 service_runner = ServiceRunner(__env__.get('plugins'), logger=logger, debug=is_debugging)
 
