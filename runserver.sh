@@ -19,10 +19,17 @@ do_it(){
     fi
 
     vers2=$($python -c 'import sys; i=sys.version_info; print("{}{}".format(i.major,i.minor))')
-    vyperlib=$dir1/python_lib3/vyperlogix$vers2.zip
-    if [[ -f "$vyperlib" ]]
+    vyperlib=$dir1/python_lib3
+    if [[ -d "$vyperlib" ]]
     then
         echo "$vyperlib exists"
+        vyperlib=$vyperlib/vyperlogix$vers2.zip
+        if [[ -f "$vyperlib" ]]
+        then
+            echo "$vyperlib exists"
+        else
+            vyperlib=/home/raychorn/projects/python-projects/private_vyperlogix_lib3
+        fi
     else
         vyperlib=/home/raychorn/projects/python-projects/private_vyperlogix_lib3
     fi
