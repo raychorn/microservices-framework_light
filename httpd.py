@@ -109,12 +109,16 @@ def catch_all(path):
     print('request.method -> {}'.format(request.method))
     if (request.method in ['POST', 'PUT', 'DELETE']):
         try:
-            d = request.get_json()
-            print(json.dumps(d, indent=3))
-            print('-'*30)
-            d = service_runner.resolve(request, data=d, path=the_path, plugins=__fp_plugins__)
-            if (d is not None):
-                the_response['response'] = d
+            uuid = the_path[0] if (len(the_path) > 0) else None
+            if (uuid == __env__.get('__uuid__')):
+                d = request.get_json()
+                print(json.dumps(d, indent=3))
+                print('-'*30)
+                d = service_runner.resolve(request, data=d, path=the_path, plugins=__fp_plugins__)
+                if (d is not None):
+                    the_response['response'] = d
+                else:
+                    return json.dumps({'success':False}), 404, {'ContentType':'application/json'}
             else:
                 return json.dumps({'success':False}), 404, {'ContentType':'application/json'}
         except Exception as ex:
