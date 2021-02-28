@@ -22,11 +22,26 @@ content-type: application/json
 {
     "data": {
         "id": "",
-        "name": "Dynamic Pluggable Microservice Framework",
+        "name": "Dynamic Pluggable Microservice Frameworks",
         "description": "",
         "url": ""
     }
 }
+
+###
+
+POST http://172.26.222.12:9999/4a1bf01e-0693-48c5-a52b-fc275205c1d8/word-cloud-cluster/add-one-article/?debug=1 HTTP/1.1
+content-type: application/json
+
+{
+    "data": {
+        "id": "",
+        "name": "@1",
+        "description": "@2",
+        "url": "@3"
+    }
+}
+
 
 ###
 
@@ -38,4 +53,13 @@ content-type: application/json
     "username": "root",
     "password": "sisko@7660$boo",
     "authenticationDatabase": "admin"
+}
+
+###
+
+POST http://127.0.0.1:9999/4a1bf01e-0693-48c5-a52b-fc275205c1d8/word-cloud-cluster/get-all-articles/ HTTP/1.1
+content-type: application/json
+
+{
+    "criteria": {"$text": {"$search": "Pub"}}
 }
