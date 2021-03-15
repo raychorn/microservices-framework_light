@@ -1,4 +1,4 @@
-# deploy this into /workspaces in the container
+#!/usr/bin/env bash
 
 do_it(){
     REQS=requirements.txt

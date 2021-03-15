@@ -1,0 +1,242 @@
+[2021-03-15 10:26:00 -0600] [32070] [INFO] Starting gunicorn 20.0.4
+[2021-03-15 10:26:00 -0600] [32070] [INFO] Listening at: http://0.0.0.0:9999 (32070)
+[2021-03-15 10:26:00 -0600] [32070] [INFO] Using worker: gevent
+[2021-03-15 10:26:00 -0600] [32070] [INFO] Server is ready. Spawning workers
+[2021-03-15 10:26:00 -0600] [32071] [INFO] Booting worker with pid: 32071
+[2021-03-15 10:26:00 -0600] [32071] [INFO] Worker spawned (pid: 32071)
+[2021-03-15 10:26:00 -0600] [32072] [INFO] Booting worker with pid: 32072
+[2021-03-15 10:26:00 -0600] [32072] [INFO] Worker spawned (pid: 32072)
+[2021-03-15 10:26:00 -0600] [32073] [INFO] Booting worker with pid: 32073
+[2021-03-15 10:26:00 -0600] [32073] [INFO] Worker spawned (pid: 32073)
+[2021-03-15 10:26:00 -0600] [32071] [ERROR] Exception in worker process
+Traceback (most recent call last):
+  File "/home/raychorn/projects/python-projects/microservices-framework_light/.venv392/lib/python3.9/site-packages/gunicorn/arbiter.py", line 583, in spawn_worker
+    worker.init_process()
+  File "/home/raychorn/projects/python-projects/microservices-framework_light/.venv392/lib/python3.9/site-packages/gunicorn/workers/ggevent.py", line 160, in init_process
+    self.patch()
+  File "/home/raychorn/projects/python-projects/microservices-framework_light/.venv392/lib/python3.9/site-packages/gunicorn/workers/ggevent.py", line 61, in patch
+    sockets.append(socket.socket(s.FAMILY, socket.SOCK_STREAM,
+  File "/home/raychorn/projects/python-projects/microservices-framework_light/.venv392/lib/python3.9/site-packages/gevent/_socket3.py", line 135, in __init__
+    self.__init_common()
+  File "/home/raychorn/projects/python-projects/microservices-framework_light/.venv392/lib/python3.9/site-packages/gevent/_socket3.py", line 141, in __init_common
+    self.hub = get_hub()
+  File "/home/raychorn/projects/python-projects/microservices-framework_light/.venv392/lib/python3.9/site-packages/gevent/_hub_local.py", line 80, in get_hub_noargs
+    hub = _threadlocal.hub = hubtype()
+  File "/home/raychorn/projects/python-projects/microservices-framework_light/.venv392/lib/python3.9/site-packages/gevent/hub.py", line 445, in __init__
+    self.loop = self.loop_class(flags=loop, default=default) # pylint:disable=not-callable
+  File "/home/raychorn/projects/python-projects/microservices-framework_light/.venv392/lib/python3.9/site-packages/gevent/hub.py", line 459, in loop_class
+    return GEVENT_CONFIG.loop
+  File "/home/raychorn/projects/python-projects/microservices-framework_light/.venv392/lib/python3.9/site-packages/gevent/_config.py", line 50, in getter
+    return self.settings[setting_name].get()
+  File "/home/raychorn/projects/python-projects/microservices-framework_light/.venv392/lib/python3.9/site-packages/gevent/_config.py", line 146, in get
+    self.value = self.validate(self._default())
+  File "/home/raychorn/projects/python-projects/microservices-framework_light/.venv392/lib/python3.9/site-packages/gevent/_config.py", line 248, in validate
+    return self._import_one_of([self.shortname_map.get(x, x) for x in value])
+  File "/home/raychorn/projects/python-projects/microservices-framework_light/.venv392/lib/python3.9/site-packages/gevent/_config.py", line 223, in _import_one_of
+    return self._import_one(candidates[-1])
+  File "/home/raychorn/projects/python-projects/microservices-framework_light/.venv392/lib/python3.9/site-packages/gevent/_config.py", line 230, in _import_one
+    raise ImportError("Cannot import %r. "
+ImportError: Cannot import "'libuv-cffi']". Required format: [package.]module.class. Or choose from ['libev-cext', 'libev-cffi', 'libuv-cffi', 'libuv']
+[2021-03-15 10:26:00 -0600] [32071] [INFO] Worker exiting (pid: 32071)
+[2021-03-15 10:26:00 -0600] [32072] [ERROR] Exception in worker process
+Traceback (most recent call last):
+  File "/home/raychorn/projects/python-projects/microservices-framework_light/.venv392/lib/python3.9/site-packages/gunicorn/arbiter.py", line 583, in spawn_worker
+    worker.init_process()
+  File "/home/raychorn/projects/python-projects/microservices-framework_light/.venv392/lib/python3.9/site-packages/gunicorn/workers/ggevent.py", line 160, in init_process
+    self.patch()
+  File "/home/raychorn/projects/python-projects/microservices-framework_light/.venv392/lib/python3.9/site-packages/gunicorn/workers/ggevent.py", line 61, in patch
+    sockets.append(socket.socket(s.FAMILY, socket.SOCK_STREAM,
+  File "/home/raychorn/projects/python-projects/microservices-framework_light/.venv392/lib/python3.9/site-packages/gevent/_socket3.py", line 135, in __init__
+    self.__init_common()
+  File "/home/raychorn/projects/python-projects/microservices-framework_light/.venv392/lib/python3.9/site-packages/gevent/_socket3.py", line 141, in __init_common
+    self.hub = get_hub()
+  File "/home/raychorn/projects/python-projects/microservices-framework_light/.venv392/lib/python3.9/site-packages/gevent/_hub_local.py", line 80, in get_hub_noargs
+    hub = _threadlocal.hub = hubtype()
+  File "/home/raychorn/projects/python-projects/microservices-framework_light/.venv392/lib/python3.9/site-packages/gevent/hub.py", line 445, in __init__
+    self.loop = self.loop_class(flags=loop, default=default) # pylint:disable=not-callable
+  File "/home/raychorn/projects/python-projects/microservices-framework_light/.venv392/lib/python3.9/site-packages/gevent/hub.py", line 459, in loop_class
+    return GEVENT_CONFIG.loop
+  File "/home/raychorn/projects/python-projects/microservices-framework_light/.venv392/lib/python3.9/site-packages/gevent/_config.py", line 50, in getter
+    return self.settings[setting_name].get()
+  File "/home/raychorn/projects/python-projects/microservices-framework_light/.venv392/lib/python3.9/site-packages/gevent/_config.py", line 146, in get
+    self.value = self.validate(self._default())
+  File "/home/raychorn/projects/python-projects/microservices-framework_light/.venv392/lib/python3.9/site-packages/gevent/_config.py", line 248, in validate
+    return self._import_one_of([self.shortname_map.get(x, x) for x in value])
+  File "/home/raychorn/projects/python-projects/microservices-framework_light/.venv392/lib/python3.9/site-packages/gevent/_config.py", line 223, in _import_one_of
+    return self._import_one(candidates[-1])
+  File "/home/raychorn/projects/python-projects/microservices-framework_light/.venv392/lib/python3.9/site-packages/gevent/_config.py", line 230, in _import_one
+    raise ImportError("Cannot import %r. "
+ImportError: Cannot import "'libuv-cffi']". Required format: [package.]module.class. Or choose from ['libev-cext', 'libev-cffi', 'libuv-cffi', 'libuv']
+[2021-03-15 10:26:00 -0600] [32072] [INFO] Worker exiting (pid: 32072)
+[2021-03-15 10:26:00 -0600] [32073] [ERROR] Exception in worker process
+Traceback (most recent call last):
+  File "/home/raychorn/projects/python-projects/microservices-framework_light/.venv392/lib/python3.9/site-packages/gunicorn/arbiter.py", line 583, in spawn_worker
+    worker.init_process()
+  File "/home/raychorn/projects/python-projects/microservices-framework_light/.venv392/lib/python3.9/site-packages/gunicorn/workers/ggevent.py", line 160, in init_process
+    self.patch()
+  File "/home/raychorn/projects/python-projects/microservices-framework_light/.venv392/lib/python3.9/site-packages/gunicorn/workers/ggevent.py", line 61, in patch
+    sockets.append(socket.socket(s.FAMILY, socket.SOCK_STREAM,
+  File "/home/raychorn/projects/python-projects/microservices-framework_light/.venv392/lib/python3.9/site-packages/gevent/_socket3.py", line 135, in __init__
+    self.__init_common()
+  File "/home/raychorn/projects/python-projects/microservices-framework_light/.venv392/lib/python3.9/site-packages/gevent/_socket3.py", line 141, in __init_common
+    self.hub = get_hub()
+  File "/home/raychorn/projects/python-projects/microservices-framework_light/.venv392/lib/python3.9/site-packages/gevent/_hub_local.py", line 80, in get_hub_noargs
+    hub = _threadlocal.hub = hubtype()
+  File "/home/raychorn/projects/python-projects/microservices-framework_light/.venv392/lib/python3.9/site-packages/gevent/hub.py", line 445, in __init__
+    self.loop = self.loop_class(flags=loop, default=default) # pylint:disable=not-callable
+  File "/home/raychorn/projects/python-projects/microservices-framework_light/.venv392/lib/python3.9/site-packages/gevent/hub.py", line 459, in loop_class
+    return GEVENT_CONFIG.loop
+  File "/home/raychorn/projects/python-projects/microservices-framework_light/.venv392/lib/python3.9/site-packages/gevent/_config.py", line 50, in getter
+    return self.settings[setting_name].get()
+  File "/home/raychorn/projects/python-projects/microservices-framework_light/.venv392/lib/python3.9/site-packages/gevent/_config.py", line 146, in get
+    self.value = self.validate(self._default())
+  File "/home/raychorn/projects/python-projects/microservices-framework_light/.venv392/lib/python3.9/site-packages/gevent/_config.py", line 248, in validate
+    return self._import_one_of([self.shortname_map.get(x, x) for x in value])
+  File "/home/raychorn/projects/python-projects/microservices-framework_light/.venv392/lib/python3.9/site-packages/gevent/_config.py", line 223, in _import_one_of
+    return self._import_one(candidates[-1])
+  File "/home/raychorn/projects/python-projects/microservices-framework_light/.venv392/lib/python3.9/site-packages/gevent/_config.py", line 230, in _import_one
+    raise ImportError("Cannot import %r. "
+ImportError: Cannot import "'libuv-cffi']". Required format: [package.]module.class. Or choose from ['libev-cext', 'libev-cffi', 'libuv-cffi', 'libuv']
+[2021-03-15 10:26:00 -0600] [32073] [INFO] Worker exiting (pid: 32073)
+[2021-03-15 10:41:01 -0600] [1369] [INFO] Starting gunicorn 20.0.4
+[2021-03-15 10:41:01 -0600] [1369] [INFO] Listening at: http://0.0.0.0:9999 (1369)
+[2021-03-15 10:41:01 -0600] [1369] [INFO] Using worker: gevent
+[2021-03-15 10:41:01 -0600] [1369] [INFO] Server is ready. Spawning workers
+[2021-03-15 10:41:01 -0600] [1371] [INFO] Booting worker with pid: 1371
+[2021-03-15 10:41:01 -0600] [1371] [INFO] Worker spawned (pid: 1371)
+[2021-03-15 10:41:01 -0600] [1372] [INFO] Booting worker with pid: 1372
+[2021-03-15 10:41:01 -0600] [1372] [INFO] Worker spawned (pid: 1372)
+[2021-03-15 10:41:01 -0600] [1375] [INFO] Booting worker with pid: 1375
+[2021-03-15 10:41:01 -0600] [1375] [INFO] Worker spawned (pid: 1375)
+[2021-03-15 10:41:01 -0600] [1375] [ERROR] Exception in worker process
+Traceback (most recent call last):
+  File "/home/raychorn/projects/python-projects/microservices-framework_light/.venv392/lib/python3.9/site-packages/gunicorn/arbiter.py", line 583, in spawn_worker
+    worker.init_process()
+  File "/home/raychorn/projects/python-projects/microservices-framework_light/.venv392/lib/python3.9/site-packages/gunicorn/workers/ggevent.py", line 160, in init_process
+    self.patch()
+  File "/home/raychorn/projects/python-projects/microservices-framework_light/.venv392/lib/python3.9/site-packages/gunicorn/workers/ggevent.py", line 61, in patch
+    sockets.append(socket.socket(s.FAMILY, socket.SOCK_STREAM,
+  File "/home/raychorn/projects/python-projects/microservices-framework_light/.venv392/lib/python3.9/site-packages/gevent/_socket3.py", line 135, in __init__
+    self.__init_common()
+  File "/home/raychorn/projects/python-projects/microservices-framework_light/.venv392/lib/python3.9/site-packages/gevent/_socket3.py", line 141, in __init_common
+    self.hub = get_hub()
+  File "/home/raychorn/projects/python-projects/microservices-framework_light/.venv392/lib/python3.9/site-packages/gevent/_hub_local.py", line 80, in get_hub_noargs
+    hub = _threadlocal.hub = hubtype()
+  File "/home/raychorn/projects/python-projects/microservices-framework_light/.venv392/lib/python3.9/site-packages/gevent/hub.py", line 445, in __init__
+    self.loop = self.loop_class(flags=loop, default=default) # pylint:disable=not-callable
+  File "/home/raychorn/projects/python-projects/microservices-framework_light/.venv392/lib/python3.9/site-packages/gevent/hub.py", line 459, in loop_class
+    return GEVENT_CONFIG.loop
+  File "/home/raychorn/projects/python-projects/microservices-framework_light/.venv392/lib/python3.9/site-packages/gevent/_config.py", line 50, in getter
+    return self.settings[setting_name].get()
+  File "/home/raychorn/projects/python-projects/microservices-framework_light/.venv392/lib/python3.9/site-packages/gevent/_config.py", line 146, in get
+    self.value = self.validate(self._default())
+  File "/home/raychorn/projects/python-projects/microservices-framework_light/.venv392/lib/python3.9/site-packages/gevent/_config.py", line 248, in validate
+    return self._import_one_of([self.shortname_map.get(x, x) for x in value])
+  File "/home/raychorn/projects/python-projects/microservices-framework_light/.venv392/lib/python3.9/site-packages/gevent/_config.py", line 223, in _import_one_of
+    return self._import_one(candidates[-1])
+  File "/home/raychorn/projects/python-projects/microservices-framework_light/.venv392/lib/python3.9/site-packages/gevent/_config.py", line 230, in _import_one
+    raise ImportError("Cannot import %r. "
+ImportError: Cannot import "'libuv-cffi']". Required format: [package.]module.class. Or choose from ['libev-cext', 'libev-cffi', 'libuv-cffi', 'libuv']
+[2021-03-15 10:41:01 -0600] [1371] [ERROR] Exception in worker process
+Traceback (most recent call last):
+  File "/home/raychorn/projects/python-projects/microservices-framework_light/.venv392/lib/python3.9/site-packages/gunicorn/arbiter.py", line 583, in spawn_worker
+    worker.init_process()
+  File "/home/raychorn/projects/python-projects/microservices-framework_light/.venv392/lib/python3.9/site-packages/gunicorn/workers/ggevent.py", line 160, in init_process
+    self.patch()
+  File "/home/raychorn/projects/python-projects/microservices-framework_light/.venv392/lib/python3.9/site-packages/gunicorn/workers/ggevent.py", line 61, in patch
+    sockets.append(socket.socket(s.FAMILY, socket.SOCK_STREAM,
+  File "/home/raychorn/projects/python-projects/microservices-framework_light/.venv392/lib/python3.9/site-packages/gevent/_socket3.py", line 135, in __init__
+    self.__init_common()
+  File "/home/raychorn/projects/python-projects/microservices-framework_light/.venv392/lib/python3.9/site-packages/gevent/_socket3.py", line 141, in __init_common
+    self.hub = get_hub()
+  File "/home/raychorn/projects/python-projects/microservices-framework_light/.venv392/lib/python3.9/site-packages/gevent/_hub_local.py", line 80, in get_hub_noargs
+    hub = _threadlocal.hub = hubtype()
+  File "/home/raychorn/projects/python-projects/microservices-framework_light/.venv392/lib/python3.9/site-packages/gevent/hub.py", line 445, in __init__
+    self.loop = self.loop_class(flags=loop, default=default) # pylint:disable=not-callable
+  File "/home/raychorn/projects/python-projects/microservices-framework_light/.venv392/lib/python3.9/site-packages/gevent/hub.py", line 459, in loop_class
+    return GEVENT_CONFIG.loop
+  File "/home/raychorn/projects/python-projects/microservices-framework_light/.venv392/lib/python3.9/site-packages/gevent/_config.py", line 50, in getter
+    return self.settings[setting_name].get()
+  File "/home/raychorn/projects/python-projects/microservices-framework_light/.venv392/lib/python3.9/site-packages/gevent/_config.py", line 146, in get
+    self.value = self.validate(self._default())
+  File "/home/raychorn/projects/python-projects/microservices-framework_light/.venv392/lib/python3.9/site-packages/gevent/_config.py", line 248, in validate
+    return self._import_one_of([self.shortname_map.get(x, x) for x in value])
+  File "/home/raychorn/projects/python-projects/microservices-framework_light/.venv392/lib/python3.9/site-packages/gevent/_config.py", line 223, in _import_one_of
+    return self._import_one(candidates[-1])
+  File "/home/raychorn/projects/python-projects/microservices-framework_light/.venv392/lib/python3.9/site-packages/gevent/_config.py", line 230, in _import_one
+    raise ImportError("Cannot import %r. "
+ImportError: Cannot import "'libuv-cffi']". Required format: [package.]module.class. Or choose from ['libev-cext', 'libev-cffi', 'libuv-cffi', 'libuv']
+[2021-03-15 10:41:01 -0600] [1372] [ERROR] Exception in worker process
+Traceback (most recent call last):
+  File "/home/raychorn/projects/python-projects/microservices-framework_light/.venv392/lib/python3.9/site-packages/gunicorn/arbiter.py", line 583, in spawn_worker
+    worker.init_process()
+  File "/home/raychorn/projects/python-projects/microservices-framework_light/.venv392/lib/python3.9/site-packages/gunicorn/workers/ggevent.py", line 160, in init_process
+    self.patch()
+  File "/home/raychorn/projects/python-projects/microservices-framework_light/.venv392/lib/python3.9/site-packages/gunicorn/workers/ggevent.py", line 61, in patch
+    sockets.append(socket.socket(s.FAMILY, socket.SOCK_STREAM,
+  File "/home/raychorn/projects/python-projects/microservices-framework_light/.venv392/lib/python3.9/site-packages/gevent/_socket3.py", line 135, in __init__
+    self.__init_common()
+  File "/home/raychorn/projects/python-projects/microservices-framework_light/.venv392/lib/python3.9/site-packages/gevent/_socket3.py", line 141, in __init_common
+    self.hub = get_hub()
+  File "/home/raychorn/projects/python-projects/microservices-framework_light/.venv392/lib/python3.9/site-packages/gevent/_hub_local.py", line 80, in get_hub_noargs
+    hub = _threadlocal.hub = hubtype()
+  File "/home/raychorn/projects/python-projects/microservices-framework_light/.venv392/lib/python3.9/site-packages/gevent/hub.py", line 445, in __init__
+    self.loop = self.loop_class(flags=loop, default=default) # pylint:disable=not-callable
+  File "/home/raychorn/projects/python-projects/microservices-framework_light/.venv392/lib/python3.9/site-packages/gevent/hub.py", line 459, in loop_class
+    return GEVENT_CONFIG.loop
+  File "/home/raychorn/projects/python-projects/microservices-framework_light/.venv392/lib/python3.9/site-packages/gevent/_config.py", line 50, in getter
+    return self.settings[setting_name].get()
+  File "/home/raychorn/projects/python-projects/microservices-framework_light/.venv392/lib/python3.9/site-packages/gevent/_config.py", line 146, in get
+    self.value = self.validate(self._default())
+  File "/home/raychorn/projects/python-projects/microservices-framework_light/.venv392/lib/python3.9/site-packages/gevent/_config.py", line 248, in validate
+    return self._import_one_of([self.shortname_map.get(x, x) for x in value])
+  File "/home/raychorn/projects/python-projects/microservices-framework_light/.venv392/lib/python3.9/site-packages/gevent/_config.py", line 223, in _import_one_of
+    return self._import_one(candidates[-1])
+  File "/home/raychorn/projects/python-projects/microservices-framework_light/.venv392/lib/python3.9/site-packages/gevent/_config.py", line 230, in _import_one
+    raise ImportError("Cannot import %r. "
+ImportError: Cannot import "'libuv-cffi']". Required format: [package.]module.class. Or choose from ['libev-cext', 'libev-cffi', 'libuv-cffi', 'libuv']
+[2021-03-15 10:41:02 -0600] [1375] [INFO] Worker exiting (pid: 1375)
+[2021-03-15 10:41:02 -0600] [1371] [INFO] Worker exiting (pid: 1371)
+[2021-03-15 10:41:02 -0600] [1372] [INFO] Worker exiting (pid: 1372)
+[2021-03-15 10:50:26 -0600] [13330] [INFO] Starting gunicorn 20.0.4
+[2021-03-15 10:50:26 -0600] [13330] [INFO] Listening at: http://0.0.0.0:9999 (13330)
+[2021-03-15 10:50:26 -0600] [13330] [INFO] Using worker: tornado
+[2021-03-15 10:50:26 -0600] [13330] [INFO] Server is ready. Spawning workers
+[2021-03-15 10:50:26 -0600] [13332] [INFO] Booting worker with pid: 13332
+[2021-03-15 10:50:26 -0600] [13332] [INFO] Worker spawned (pid: 13332)
+[2021-03-15 10:50:26 -0600] [13335] [INFO] Booting worker with pid: 13335
+[2021-03-15 10:50:26 -0600] [13335] [INFO] Worker spawned (pid: 13335)
+[2021-03-15 10:50:26 -0600] [13336] [INFO] Booting worker with pid: 13336
+[2021-03-15 10:50:26 -0600] [13336] [INFO] Worker spawned (pid: 13336)
+[2021-03-15 10:50:27 -0600] [13335] [ERROR] Exception in worker process
+Traceback (most recent call last):
+  File "/home/raychorn/projects/python-projects/microservices-framework_light/.venv392/lib/python3.9/site-packages/gunicorn/arbiter.py", line 583, in spawn_worker
+    worker.init_process()
+  File "/home/raychorn/projects/python-projects/microservices-framework_light/.venv392/lib/python3.9/site-packages/gunicorn/workers/gtornado.py", line 87, in init_process
+    super().init_process()
+  File "/home/raychorn/projects/python-projects/microservices-framework_light/.venv392/lib/python3.9/site-packages/gunicorn/workers/base.py", line 119, in init_process
+    self.load_wsgi()
+  File "/home/raychorn/projects/python-projects/microservices-framework_light/.venv392/lib/python3.9/site-packages/gunicorn/workers/base.py", line 144, in load_wsgi
+    self.wsgi = self.app.wsgi()
+  File "/home/raychorn/projects/python-projects/microservices-framework_light/.venv392/lib/python3.9/site-packages/gunicorn/app/base.py", line 67, in wsgi
+    self.callable = self.load()
+  File "/home/raychorn/projects/python-projects/microservices-framework_light/.venv392/lib/python3.9/site-packages/gunicorn/app/wsgiapp.py", line 49, in load
+    return self.load_wsgiapp()
+  File "/home/raychorn/projects/python-projects/microservices-framework_light/.venv392/lib/python3.9/site-packages/gunicorn/app/wsgiapp.py", line 39, in load_wsgiapp
+    return util.import_app(self.app_uri)
+  File "/home/raychorn/projects/python-projects/microservices-framework_light/.venv392/lib/python3.9/site-packages/gunicorn/util.py", line 358, in import_app
+    mod = importlib.import_module(module)
+  File "/usr/lib/python3.9/importlib/__init__.py", line 127, in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+  File "<frozen importlib._bootstrap>", line 1030, in _gcd_import
+  File "<frozen importlib._bootstrap>", line 1007, in _find_and_load
+  File "<frozen importlib._bootstrap>", line 986, in _find_and_load_unlocked
+  File "<frozen importlib._bootstrap>", line 680, in _load_unlocked
+  File "<frozen importlib._bootstrap_external>", line 790, in exec_module
+  File "<frozen importlib._bootstrap>", line 228, in _call_with_frames_removed
+  File "/home/raychorn/projects/python-projects/microservices-framework_light/httpd.py", line 59, in <module>
+    os.remove(log_filename)
+FileNotFoundError: [Errno 2] No such file or directory: 'logs/httpd/production/httpd_20210315T165027.log'
+[2021-03-15 10:50:27 -0600] [13335] [INFO] Worker exiting (pid: 13335)
+[2021-03-15 10:50:57 -0600] [13330] [INFO] Shutting down: Master
+[2021-03-15 10:50:57 -0600] [13330] [INFO] Reason: Worker failed to boot.

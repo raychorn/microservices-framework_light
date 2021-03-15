@@ -17,9 +17,49 @@
 #       Must be a positive integer. Generally set in the 64-2048
 #       range.
 #
+import os
+from dotenv import find_dotenv
+
+from vyperlogix.env.environ import MyDotEnv
+
+def __escape(v):
+    from urllib import parse
+    return parse.quote_plus(v)
+
+def __unescape(v):
+    from urllib import parse
+    return parse.unquote_plus(v)
+
+__env__ = {}
+env_literals = []
+def get_environ_keys(*args, **kwargs):
+    from expandvars import expandvars
+    
+    k = kwargs.get('key')
+    v = kwargs.get('value')
+    assert (k is not None) and (v is not None), 'Problem with kwargs -> {}, k={}, v={}'.format(kwargs,k,v)
+    __logger__ = kwargs.get('logger')
+    if (k == '__LITERALS__'):
+        for item in v:
+            env_literals.append(item)
+    if (isinstance(v, str)):
+        v = expandvars(v) if (k not in env_literals) else v
+        v = __escape(v) if (k in __env__.get('__ESCAPED__', [])) else v
+    ignoring = __env__.get('IGNORING', [])
+    environ = kwargs.get('environ', None)
+    if (isinstance(environ, dict)):
+        environ[k] = v
+    if (k not in ignoring):
+        __env__[k] = v
+    if (__logger__):
+        __logger__.info('\t{} -> {}'.format(k, environ.get(k)))
+    return tuple([k,v])
+
+dotenv = MyDotEnv(find_dotenv(), verbose=True, interpolate=True, override=True, callback=get_environ_keys)
+dotenv.set_as_environment_variables()
+
 normalize = lambda v,t:t(eval(str(v)))
 
-import os
 bind = "{}:{}".format(os.environ.get('host', '0.0.0.0'), os.environ.get('port', '9999'))
 backlog = normalize(os.environ.get('gunicorn_backlog', 128), int)
 
@@ -85,12 +125,14 @@ keepalive = normalize(os.environ.get('gunicorn_keepalive', 10), int)
 print('GUNICORN (7) :: keepalive -> {}'.format(keepalive))
 graceful_timeout = normalize(os.environ.get('gunicorn_graceful_timeout', 30), int)
 print('GUNICORN (8) :: graceful_timeout -> {}'.format(graceful_timeout))
-threads = workers
+
+threads = normalize(os.environ.get('gunicorn_threads', workers), int)
+print('GUNICORN (9) :: threads -> {}'.format(threads))
 
 pidfile = os.environ.get('gunicorn_pidfile')
 if (pidfile is not None):
     pidfile = os.path.abspath(pidfile)
-print('GUNICORN (9) :: pidfile -> {}'.format(pidfile))
+print('GUNICORN (10) :: pidfile -> {}'.format(pidfile))
 #
 #   spew - Install a trace function that spews every line of Python
 #       that is executed when running the server. This is the
@@ -143,7 +185,7 @@ spew = False
 #
 
 daemon = normalize(os.environ.get('gunicorn_daemon', False), bool)
-print('GUNICORN (10) :: daemon -> {}'.format(daemon))
+print('GUNICORN (11) :: daemon -> {}'.format(daemon))
 raw_env = []
 tmp_upload_dir = None
 
@@ -160,14 +202,20 @@ tmp_upload_dir = None
 #
 
 errorlog = os.environ.get('gunicorn_errorlog')
+print('GUNICORN (12.1) :: errorlog -> {}'.format(errorlog))
 if (errorlog is not None):
     errorlog = os.path.abspath(errorlog)
-print('GUNICORN (11) :: errorlog -> {}'.format(errorlog))
+print('GUNICORN (12.2) :: errorlog -> {}'.format(errorlog))
+if (os.path.exists(errorlog)):
+    os.remove(errorlog)
 loglevel = os.environ.get('gunicorn_loglevel', 'info')
 accesslog = os.environ.get('gunicorn_accesslog')
+print('GUNICORN (13.1) :: accesslog -> {}'.format(accesslog))
 if (accesslog is not None):
     accesslog = os.path.abspath(accesslog)
-print('GUNICORN (12) :: accesslog -> {}'.format(accesslog))
+print('GUNICORN (13.2) :: accesslog -> {}'.format(accesslog))
+if (os.path.exists(accesslog)):
+    os.remove(accesslog)
 access_log_format = '%(h)s %(l)s %(u)s %(t)s "%(r)s" %(s)s %(b)s "%(f)s" "%(a)s"'
 
 #
@@ -184,7 +232,7 @@ access_log_format = '%(h)s %(l)s %(u)s %(t)s "%(r)s" %(s)s %(b)s "%(f)s" "%(a)s"
 #
 
 proc_name = os.environ.get('gunicorn_proc_name', 'vyperapi')
-print('GUNICORN (13) :: proc_name -> {}'.format(proc_name))
+print('GUNICORN (14) :: proc_name -> {}'.format(proc_name))
 
 #
 # Server hooks

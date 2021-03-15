@@ -69,6 +69,7 @@ logger = setup_rotating_file_handler(base_filename, log_filename, (1024*1024*102
 logger.addHandler(get_stream_handler())
 
 
+################################################
 def __escape(v):
     from urllib import parse
     return parse.quote_plus(v)
@@ -77,7 +78,6 @@ def __unescape(v):
     from urllib import parse
     return parse.unquote_plus(v)
 
-################################################
 __env__ = {}
 env_literals = []
 def get_environ_keys(*args, **kwargs):
