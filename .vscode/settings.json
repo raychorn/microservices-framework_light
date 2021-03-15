@@ -1,3 +1,4 @@
 {
-    "python.pythonPath": ".venv392/bin/python"
+    "python.pythonPath": ".venv392/bin/python",
+    "python.formatting.provider": "black"
 }

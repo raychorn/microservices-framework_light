@@ -33,7 +33,10 @@ I can provide support when you provide a Sponsorship via the link.
 
 ## Usage <a name = "usage"></a>
 
-Add notes about how to use the system.
+```
+sudo apt remove ca-certificates
+sudo apt install ca-certificates
+```
 
 ## Deployment
 

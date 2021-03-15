@@ -8,12 +8,14 @@ from logging.handlers import RotatingFileHandler
 
 from datetime import datetime
 
+from dotenv import find_dotenv
+
 if (os.environ.get('vyperlogix_lib3')):
     pylib = os.environ.get('vyperlogix_lib3')
     if (not any([f == pylib for f in sys.path])):
         sys.path.insert(0, pylib)
     
-from vyperlogix.env import environ
+from vyperlogix.env.environ import MyDotEnv
 from vyperlogix.misc import _utils
 from vyperlogix.decorators import expose
 from vyperlogix.iterators.dict import dictutils
@@ -67,7 +69,15 @@ logger = setup_rotating_file_handler(base_filename, log_filename, (1024*1024*102
 logger.addHandler(get_stream_handler())
 
 
+def __escape(v):
+    from urllib import parse
+    return parse.quote_plus(v)
 
+def __unescape(v):
+    from urllib import parse
+    return parse.unquote_plus(v)
+
+################################################
 __env__ = {}
 env_literals = []
 def get_environ_keys(*args, **kwargs):
@@ -77,18 +87,25 @@ def get_environ_keys(*args, **kwargs):
     v = kwargs.get('value')
     assert (k is not None) and (v is not None), 'Problem with kwargs -> {}, k={}, v={}'.format(kwargs,k,v)
     __logger__ = kwargs.get('logger')
-    v = expandvars(v) if (k not in env_literals) else v
-    environ = kwargs.get('environ', {})
-    ignoring = __env__.get('IGNORING', '').split('|')
-    environ[k] = str(v)
+    if (k == '__LITERALS__'):
+        for item in v:
+            env_literals.append(item)
+    if (isinstance(v, str)):
+        v = expandvars(v) if (k not in env_literals) else v
+        v = __escape(v) if (k in __env__.get('__ESCAPED__', [])) else v
+    ignoring = __env__.get('IGNORING', [])
+    environ = kwargs.get('environ', None)
+    if (isinstance(environ, dict)):
+        environ[k] = v
     if (k not in ignoring):
-        __env__[k] = str(v)
+        __env__[k] = v
     if (__logger__):
         __logger__.info('\t{} -> {}'.format(k, environ.get(k)))
-    return True
+    return tuple([k,v])
 
-env_path = './.env'
-environ.load_env(env_path=env_path, environ=os.environ, cwd=env_path, verbose=False, logger=logger, ignoring_re='.git|.venv|__pycache__', callback=lambda *args, **kwargs:get_environ_keys(args, **kwargs))
+dotenv = MyDotEnv(find_dotenv(), verbose=True, interpolate=True, override=True, logger=logger, callback=get_environ_keys)
+dotenv.set_as_environment_variables()
+################################################
 
 assert os.path.exists(__env__.get('plugins')), 'Missing the plugins path, check your .env file.'
 

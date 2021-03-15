@@ -17,9 +17,14 @@
 #       Must be a positive integer. Generally set in the 64-2048
 #       range.
 #
+normalize = lambda v,t:t(eval(str(v)))
+
 import os
-bind = "0.0.0.0:9999"
-backlog = 2048
+bind = "{}:{}".format(os.environ.get('host', '0.0.0.0'), os.environ.get('port', '9999'))
+backlog = normalize(os.environ.get('gunicorn_backlog', 128), int)
+
+print('GUNICORN (1) :: bind -> {}'.format(bind))
+print('GUNICORN (2) :: backlog -> {}'.format(backlog))
 
 #
 # Worker processes
@@ -64,15 +69,28 @@ backlog = 2048
 #
 #       A positive integer. Generally set in the 1-5 seconds range.
 #
-#import multiprocessing
-workers = 3 # multiprocessing.cpu_count() * 2 + 1
-worker_class = 'gevent'  # 'sync' or 'eventlet'
-worker_connections = 1000
-timeout = 180
-keepalive = 10
-graceful_timeout = 30
+import multiprocessing
+__workers__ = (multiprocessing.cpu_count() * 2) + 1
+workers = normalize(os.environ.get('gunicorn_workers', 3), int)
+print('GUNICORN (3) :: __workers__ -> {}, workers -> {}'.format(__workers__, workers))
+assert workers <= __workers__, 'Cannot exceed the theoretical upper-limit for workers which is now {}.'.format(__workers__)
+
+worker_class = os.environ.get('gunicorn_worker_class', 'gevent')  # 'sync' or 'eventlet'
+print('GUNICORN (4) :: worker_class -> {}'.format(worker_class))
+worker_connections = normalize(os.environ.get('gunicorn_worker_connections', 1000), int)
+print('GUNICORN (5) :: worker_connections -> {}'.format(worker_connections))
+timeout = normalize(os.environ.get('gunicorn_timeout', 180), int)
+print('GUNICORN (6) :: timeout -> {}'.format(timeout))
+keepalive = normalize(os.environ.get('gunicorn_keepalive', 10), int)
+print('GUNICORN (7) :: keepalive -> {}'.format(keepalive))
+graceful_timeout = normalize(os.environ.get('gunicorn_graceful_timeout', 30), int)
+print('GUNICORN (8) :: graceful_timeout -> {}'.format(graceful_timeout))
 threads = workers
 
+pidfile = os.environ.get('gunicorn_pidfile')
+if (pidfile is not None):
+    pidfile = os.path.abspath(pidfile)
+print('GUNICORN (9) :: pidfile -> {}'.format(pidfile))
 #
 #   spew - Install a trace function that spews every line of Python
 #       that is executed when running the server. This is the
@@ -124,9 +142,9 @@ spew = False
 #       None to signal that Python should choose one on its own.
 #
 
-daemon = False
-raw_env = [
-]
+daemon = normalize(os.environ.get('gunicorn_daemon', False), bool)
+print('GUNICORN (10) :: daemon -> {}'.format(daemon))
+raw_env = []
 tmp_upload_dir = None
 
 #
@@ -141,9 +159,15 @@ tmp_upload_dir = None
 #       A string of "debug", "info", "warning", "error", "critical"
 #
 
-errorlog = '-'
-loglevel = 'info'
-accesslog = '-'
+errorlog = os.environ.get('gunicorn_errorlog')
+if (errorlog is not None):
+    errorlog = os.path.abspath(errorlog)
+print('GUNICORN (11) :: errorlog -> {}'.format(errorlog))
+loglevel = os.environ.get('gunicorn_loglevel', 'info')
+accesslog = os.environ.get('gunicorn_accesslog')
+if (accesslog is not None):
+    accesslog = os.path.abspath(accesslog)
+print('GUNICORN (12) :: accesslog -> {}'.format(accesslog))
 access_log_format = '%(h)s %(l)s %(u)s %(t)s "%(r)s" %(s)s %(b)s "%(f)s" "%(a)s"'
 
 #
@@ -159,7 +183,8 @@ access_log_format = '%(h)s %(l)s %(u)s %(t)s "%(r)s" %(s)s %(b)s "%(f)s" "%(a)s"
 #       A string or None to choose a default of something like 'gunicorn'.
 #
 
-proc_name = 'vyperapi'
+proc_name = os.environ.get('gunicorn_proc_name', 'vyperapi')
+print('GUNICORN (13) :: proc_name -> {}'.format(proc_name))
 
 #
 # Server hooks

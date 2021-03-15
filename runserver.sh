@@ -61,7 +61,7 @@ do_it(){
     echo "PYTHONPATH=$PYTHONPATH"
     #ls -la
     #python -m debug1
-    gunicorn -c $dir1/gunicorn/config.py --workers 4 httpd:app # --max-requests 1000
+    gunicorn -c $dir1/gunicorn/config.py httpd:app # --max-requests 1000
 }
 
 do_it #>./logs/runserver_report.txt 2>&1
