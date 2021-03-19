@@ -1,7 +1,6 @@
 import os
 import sys
-from flask import Flask, request, Response
-from flask_cors import CORS
+import enum
 
 import logging
 from logging.handlers import RotatingFileHandler
@@ -112,14 +111,74 @@ assert os.path.exists(__env__.get('plugins')), 'Missing the plugins path, check 
 is_debugging = __env__.get('debug', False)
 is_debugging = True if (is_debugging) else False
 
-app = Flask(__name__)
-CORS(app)
+class ServerMode(enum.Enum):
+    use_none = 0
+    use_flask = 1
+    use_fastapi = 2
+
+__server_mode__ = ServerMode.use_none
+if (__env__.get('use_flask', False)):
+    __server_mode__ = ServerMode.use_flask
+    assert not __env__.get('use_fastapi', False), 'Cannot use both flask and fastapi so choose one of them, not both.'
+
+if (__env__.get('use_fastapi', False)):
+    __server_mode__ = ServerMode.use_fastapi
+    assert not __env__.get('use_flask', False), 'Cannot use both flask and fastapi so choose one of them, not both.'
+
+assert (not __env__.get('use_flask', False)) and (not __env__.get('use_fastapi', False)), 'Must use either flask OR fastapi so choose one of them, not neither. Make a choice!'
+
+is_serverMode_flask = lambda : __server_mode__ == ServerMode.use_flask
+is_serverMode_fastapi = lambda : __server_mode__ == ServerMode.use_fastapi
+
+if (is_serverMode_flask()):
+    from flask import Flask, request, Response
+    from flask_cors import CORS
+
+    app = Flask(__name__)
+    CORS(app)
+
+if (is_serverMode_fastapi()):
+    from typing import Union
+    from fastapi import FastAPI
+    from pydantic import ValidationError
+    from starlette.requests import Request
+    from starlette.responses import JSONResponse
+    from fastapi.exceptions import RequestValidationError
+
+    from starlette.exceptions import HTTPException
+    from starlette.middleware.cors import CORSMiddleware
+    from starlette.status import HTTP_422_UNPROCESSABLE_ENTITY
+
+    def get_application(title=__name__, debug=None, version=None):
+        application = FastAPI(title=title, debug=debug, version=version)
+
+        application.add_middleware(
+            CORSMiddleware,
+            allow_origins=["*"],
+            allow_credentials=True,
+            allow_methods=["*"],
+            allow_headers=["*"],
+        )
+        
+        async def http_error_handler(_: Request, exc: HTTPException) -> JSONResponse:
+            return JSONResponse({"errors": [exc.detail]}, status_code=exc.status_code)        
+
+        async def http422_error_handler(
+            _: Request, exc: Union[RequestValidationError, ValidationError],
+        ) -> JSONResponse:
+            return JSONResponse(
+                {"errors": exc.errors()}, status_code=HTTP_422_UNPROCESSABLE_ENTITY,
+            )
+
+        application.add_exception_handler(HTTPException, http_error_handler)
+        application.add_exception_handler(RequestValidationError, http422_error_handler)
+
+        return application 
+    app = get_application()
 
 service_runner = ServiceRunner(__env__.get('plugins'), logger=logger, debug=is_debugging)
 
-@app.route('/', methods=['GET', 'POST', 'PUT', 'DELETE'], defaults={'path': ''})
-@app.route('/<path:path>', methods=['GET', 'POST', 'PUT', 'DELETE'])
-def catch_all(path):
+def __catch_all__(path, request=None):
     the_path = path.split('/')
     the_response = {"path": '/'.join(the_path[1:])}
     __fp_plugins__ = [__env__.get('plugins')]
@@ -186,8 +245,19 @@ def catch_all(path):
             return json.dumps({'success':False, 'reason': str(ex)}), 404, {'ContentType':'application/json'}
     return Response(json.dumps(dictutils.json_cleaner(the_response)), mimetype='application/json')
 
+if (is_serverMode_flask()):
+    @app.route('/', methods=['GET', 'POST', 'PUT', 'DELETE'], defaults={'path': ''})
+    @app.route('/<path:path>', methods=['GET', 'POST', 'PUT', 'DELETE'])
+    def flask_catch_all(path):
+        return __catch_all__(path, request=request)
+    
+if (is_serverMode_fastapi()):
+    @app.route("/{full_path:path}")
+    def fastapi_catch_all(path):
+        return __catch_all__(path, request=Request)
 
 if (__name__ == '__main__'):
-    
-    app.run(host=__env__.get('host', '127.0.0.1'), port=__env__.get('port', '5000'), load_dotenv=False, debug=False)
+
+    if (is_serverMode_flask()):    
+        app.run(host=__env__.get('host', '127.0.0.1'), port=__env__.get('port', '5000'), load_dotenv=False, debug=False)
     
