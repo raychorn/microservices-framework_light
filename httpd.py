@@ -178,7 +178,7 @@ if (is_serverMode_fastapi()):
 
 service_runner = ServiceRunner(__env__.get('plugins'), logger=logger, debug=is_debugging)
 
-def __catch_all__(path, request=None):
+def __catch_all__(path, request=None, response_handler=None):
     the_path = path.split('/')
     the_response = {"path": '/'.join(the_path[1:])}
     __fp_plugins__ = [__env__.get('plugins')]
@@ -243,13 +243,22 @@ def __catch_all__(path, request=None):
         except Exception as ex:
             print(_utils.formattedException(details=ex))
             return json.dumps({'success':False, 'reason': str(ex)}), 404, {'ContentType':'application/json'}
-    return Response(json.dumps(dictutils.json_cleaner(the_response)), mimetype='application/json')
+    __response__ = None
+    if (callable(response_handler)):
+        try:
+            __response__ = response_handler(json.dumps(dictutils.json_cleaner(the_response)), mimetype='application/json')
+        except:
+            pass
+    return __response__
 
 if (is_serverMode_flask()):
+    def flask_response_handler(content, **kwargs):
+        return Response(content, **kwargs)
+    
     @app.route('/', methods=['GET', 'POST', 'PUT', 'DELETE'], defaults={'path': ''})
     @app.route('/<path:path>', methods=['GET', 'POST', 'PUT', 'DELETE'])
     def flask_catch_all(path):
-        return __catch_all__(path, request=request)
+        return __catch_all__(path, request=request, response_handler=flask_response_handler)
     
 if (is_serverMode_fastapi()):
     @app.route("/{full_path:path}")
