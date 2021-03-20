@@ -35,5 +35,6 @@ def get_environ_keys(*args, **kwargs):
         __logger__.info('\t{} -> {}'.format(k, environ.get(k)))
     return tuple([k,v])
 
-dotenv = MyDotEnv(find_dotenv(), verbose=True, interpolate=True, override=True, logger=logger, callback=get_environ_keys)
-dotenv.set_as_environment_variables()
+def read_env(logger=None):
+    dotenv = MyDotEnv(find_dotenv(), verbose=True, interpolate=True, override=True, logger=logger, callback=get_environ_keys)
+    dotenv.set_as_environment_variables()
