@@ -44,4 +44,16 @@ __port__ = eval(__env__.get('port', 9999))
 assert isinstance(__host__, str), 'What, no host name?  Please fix.'
 assert isinstance(__port__, int), 'What, no port number?  Please fix.'
 
-uvicorn.run("httpd:app", host=__host__, port=__port__, reload=True)
+def run(app=None, host=None, port=None, reload=None):
+    config = uvicorn.Config(
+        app,
+        host=host,
+        port=port,
+        reload=reload,
+        access_log=False)
+    server = uvicorn.Server(config=config)
+    server.install_signal_handlers = lambda: None
+    server.serve() 
+
+from . import httpd
+run(app=https.app, host=__host__, port=__port__, reload=True)

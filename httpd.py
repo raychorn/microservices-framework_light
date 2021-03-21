@@ -95,21 +95,22 @@ if (__env__.get('use_fastapi', False)):
     __server_mode__ = ServerMode.use_fastapi
     assert not __env__.get('use_flask', False), 'Cannot use both flask and fastapi so choose one of them, not both.'
 
-def is_running_fastapi_correctly():
-    import inspect
-    stack = inspect.stack()
-    for fr in stack:
-        if (fr.filename.find('fastapi-launcher') > -1):
-            return True
-    return False
+if (0):
+    def is_running_fastapi_correctly():
+        import inspect
+        stack = inspect.stack()
+        for fr in stack:
+            if (fr.filename.find('fastapi-launcher') > -1):
+                return True
+        return False
+
+    if (__env__.get('use_flask', False)):
+        assert is_running_fastapi_correctly() == False, 'You must not use the "fastapi-launcher.py" to run this framework with "use_flask=True".  Please get it together.'
+
+    if (__env__.get('use_fastapi', False)):
+        assert is_running_fastapi_correctly() == True, 'You must use the "fastapi-launcher.py" to run this framework with "use_fastapi=True".  Please get it together.'
 
 assert (__env__.get('use_flask', False)) or (__env__.get('use_fastapi', False)), 'Must use either flask OR fastapi so choose one of them, not neither. Make a choice!'
-
-if (__env__.get('use_flask', False)):
-    assert is_running_fastapi_correctly() == False, 'You must not use the "fastapi-launcher.py" to run this framework with "use_flask=True".  Please get it together.'
-
-if (__env__.get('use_fastapi', False)):
-    assert is_running_fastapi_correctly() == True, 'You must use the "fastapi-launcher.py" to run this framework with "use_fastapi=True".  Please get it together.'
 
 is_serverMode_flask = lambda : __server_mode__ == ServerMode.use_flask
 is_serverMode_fastapi = lambda : __server_mode__ == ServerMode.use_fastapi
@@ -249,7 +250,7 @@ if (is_serverMode_fastapi()):
         return Response(content, **kwargs)
     
     @app.route("/{full_path:path}")
-    def fastapi_catch_all(path):
+    async def fastapi_catch_all(path):
         return __catch_all__(path, request=Request, response_handler=fastapi_response_handler)
 
 if (__name__ == '__main__'):
@@ -257,3 +258,23 @@ if (__name__ == '__main__'):
     if (is_serverMode_flask()):    
         app.run(host=__env__.get('host', '127.0.0.1'), port=__env__.get('port', '5000'), load_dotenv=False, debug=False)
     
+    if (is_serverMode_fastapi()):
+        import uvicorn
+
+        __host__ = __env__.get('host', 'localhost')
+        __port__ = eval(__env__.get('port', 9999))
+        assert isinstance(__host__, str), 'What, no host name?  Please fix.'
+        assert isinstance(__port__, int), 'What, no port number?  Please fix.'
+
+        async def run(app=None, host=None, port=None, reload=None, logger=None):
+            config = uvicorn.Config(
+                app,
+                host=host,
+                port=port,
+                reload=reload,
+                access_log=logger)
+            server = uvicorn.Server(config=config)
+            server.install_signal_handlers = lambda: None
+            await server.serve() 
+
+        run(app=app, host=__host__, port=__port__, reload=True, logger=logger)
