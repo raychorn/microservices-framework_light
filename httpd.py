@@ -95,7 +95,21 @@ if (__env__.get('use_fastapi', False)):
     __server_mode__ = ServerMode.use_fastapi
     assert not __env__.get('use_flask', False), 'Cannot use both flask and fastapi so choose one of them, not both.'
 
+def is_running_fastapi_correctly():
+    import inspect
+    stack = inspect.stack()
+    for fr in stack:
+        if (fr.filename.find('fastapi-launcher') > -1):
+            return True
+    return False
+
 assert (__env__.get('use_flask', False)) or (__env__.get('use_fastapi', False)), 'Must use either flask OR fastapi so choose one of them, not neither. Make a choice!'
+
+if (__env__.get('use_flask', False)):
+    assert is_running_fastapi_correctly() == False, 'You must not use the "fastapi-launcher.py" to run this framework with "use_flask=True".  Please get it together.'
+
+if (__env__.get('use_fastapi', False)):
+    assert is_running_fastapi_correctly() == True, 'You must use the "fastapi-launcher.py" to run this framework with "use_fastapi=True".  Please get it together.'
 
 is_serverMode_flask = lambda : __server_mode__ == ServerMode.use_flask
 is_serverMode_fastapi = lambda : __server_mode__ == ServerMode.use_fastapi
@@ -231,9 +245,12 @@ if (is_serverMode_flask()):
         return __catch_all__(path, request=request, response_handler=flask_response_handler)
     
 if (is_serverMode_fastapi()):
+    def fastapi_response_handler(content, **kwargs):
+        return Response(content, **kwargs)
+    
     @app.route("/{full_path:path}")
     def fastapi_catch_all(path):
-        return __catch_all__(path, request=Request)
+        return __catch_all__(path, request=Request, response_handler=fastapi_response_handler)
 
 if (__name__ == '__main__'):
 
