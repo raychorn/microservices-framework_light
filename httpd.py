@@ -17,7 +17,6 @@ if (os.environ.get('vyperlogix_lib3')):
     if (not any([f == pylib for f in sys.path])):
         sys.path.insert(0, pylib)
     
-from vyperlogix.env.environ import MyDotEnv
 from vyperlogix.misc import _utils
 from vyperlogix.decorators import expose
 from vyperlogix.iterators.dict import dictutils
@@ -96,7 +95,7 @@ if (__env__.get('use_fastapi', False)):
     __server_mode__ = ServerMode.use_fastapi
     assert not __env__.get('use_flask', False), 'Cannot use both flask and fastapi so choose one of them, not both.'
 
-assert (not __env__.get('use_flask', False)) and (not __env__.get('use_fastapi', False)), 'Must use either flask OR fastapi so choose one of them, not neither. Make a choice!'
+assert (__env__.get('use_flask', False)) or (__env__.get('use_fastapi', False)), 'Must use either flask OR fastapi so choose one of them, not neither. Make a choice!'
 
 is_serverMode_flask = lambda : __server_mode__ == ServerMode.use_flask
 is_serverMode_fastapi = lambda : __server_mode__ == ServerMode.use_fastapi

@@ -24,11 +24,11 @@ def get_environ_keys(*args, **kwargs):
             env_literals.append(item)
     if (isinstance(v, str)):
         v = expandvars(v) if (k not in env_literals) else v
-        v = __escape(v) if (k in __env__.get('__ESCAPED__', [])) else v
+        v = __escape(v) if (k in __env__.get('__ESCAPED__', [])) else eval(v) if (k in __env__.get('__EVALS__', [])) else v
     ignoring = __env__.get('IGNORING', [])
     environ = kwargs.get('environ', None)
     if (isinstance(environ, dict)):
-        environ[k] = v
+        environ[k] = v if (isinstance(v, str)) else str(v)
     if (k not in ignoring):
         __env__[k] = v
     if (__logger__):
