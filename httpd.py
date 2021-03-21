@@ -276,11 +276,14 @@ if (__name__ == '__main__'):
         assert isinstance(__port__, int), 'What, no port number?  Please fix.'
 
         async def run(app=None, host=None, port=None, reload=None, logger=None):
+            import multiprocessing
+            __workers__ = (multiprocessing.cpu_count() * 2) + 1
             config = uvicorn.Config(
                 app,
                 host=host,
                 port=port,
                 reload=reload,
+                workers=__workers__,
                 access_log=logger)
             server = uvicorn.Server(config=config)
             server.install_signal_handlers = lambda: None

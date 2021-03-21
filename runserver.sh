@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+set -a; source .env; set +a
+
 do_it(){
     REQS=requirements.txt
 
@@ -59,9 +61,19 @@ do_it(){
     cd $dir1
     export PYTHONPATH=$dir1:$vyperlib
     echo "PYTHONPATH=$PYTHONPATH"
-    #ls -la
-    #python -m debug1
-    gunicorn -c $dir1/gunicorn/config.py httpd:app # --max-requests 1000
+
+    echo "use_flask=$use_flask"
+    if [ "$use_flask" = "True" ]
+    then
+        echo "use_flask !!!"
+        gunicorn -c $dir1/gunicorn/config.py httpd:app # --max-requests 1000
+    fi
+    echo "use_fastapi=$use_fastapi"
+    if [ "$use_fastapi" = "True" ]
+    then
+        echo "use_fastapi !!!"
+        python $dir1/httpd.py
+    fi
 }
 
 do_it #>./logs/runserver_report.txt 2>&1
