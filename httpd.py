@@ -159,7 +159,7 @@ if (is_serverMode_fastapi()):
         application.add_exception_handler(RequestValidationError, http422_error_handler)
 
         return application 
-    app = get_application()
+    app = get_application(title=__name__, debug=False, version='2.1.0')
 
 service_runner = ServiceRunner(__env__.get('plugins'), logger=logger, debug=is_debugging)
 
@@ -277,4 +277,5 @@ if (__name__ == '__main__'):
             server.install_signal_handlers = lambda: None
             await server.serve() 
 
-        run(app=app, host=__host__, port=__port__, reload=True, logger=logger)
+        import asyncio
+        asyncio.run(run(app=app, host=__host__, port=__port__, reload=True, logger=logger))
