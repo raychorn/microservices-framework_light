@@ -1,6 +1,7 @@
 import os
 import sys
 import enum
+import asyncio
 
 import logging
 from logging.handlers import RotatingFileHandler
@@ -166,7 +167,7 @@ if (is_serverMode_fastapi()):
 
 service_runner = ServiceRunner(__env__.get('plugins'), serverMode=__server_mode__, is_serverMode_flask=__is_serverMode_flask, is_serverMode_fastapi=__is_serverMode_fastapi, logger=logger, debug=is_debugging)
 
-def __catch_all__(path, request=None, response_handler=None):
+def __catch_all__(path, request=None, response_handler=None, __json=None):
     the_path = [p for p in path.split('/') if (len(str(p)) > 0)]
     the_response = {"path": '/'.join(the_path[1:])}
     __fp_plugins__ = [__env__.get('plugins')]
@@ -175,9 +176,9 @@ def __catch_all__(path, request=None, response_handler=None):
         try:
             uuid = the_path[0] if (len(the_path) > 0) else None
             if (uuid == __env__.get('__uuid__')):
-                d = request.get_json()
-                print(json.dumps(d, indent=3))
-                print('-'*30)
+                d = request.get_json() if (is_serverMode_flask()) else __json
+                logger.info(json.dumps(d, indent=3))
+                logger.info('-'*30)
                 d = service_runner.resolve(request, data=d, path=the_path, plugins=__fp_plugins__)
                 if (d is not None):
                     the_response['response'] = d
@@ -186,7 +187,7 @@ def __catch_all__(path, request=None, response_handler=None):
             else:
                 return json.dumps({'success':False}), 404, {'ContentType':'application/json'}
         except Exception as ex:
-            print(_utils.formattedException(details=ex))
+            logger.exception('EXCEPTION -> {}'.format(request.method), ex)
             return json.dumps({'success':False, 'reason': str(ex)}), 404, {'ContentType':'application/json'}
             
     elif (request.method in ['GET']):
@@ -229,7 +230,7 @@ def __catch_all__(path, request=None, response_handler=None):
             else:
                 return json.dumps({'success':False}), 404, {'ContentType':'application/json'}
         except Exception as ex:
-            logger.exception('EXCEPTION', ex)
+            logger.exception('EXCEPTION -> {}'.format(request.method), ex)
             return json.dumps({'success':False, 'reason': str(ex)}), 404, {'ContentType':'application/json'}
     __response__ = None
     if (callable(response_handler)):
@@ -254,9 +255,12 @@ if (is_serverMode_fastapi()):
             json.loads(content), status_code=HTTP_200_OK,
         )
     
-    @app.route("/{full_path:path}")
+    @app.route("/{full_path:path}", methods=['GET', 'POST', 'PUT', 'DELETE'])
     async def fastapi_catch_all(request):
-        return __catch_all__(request['path'], request=request, response_handler=fastapi_response_handler)
+        __json__ = None
+        if (request.method in ['POST', 'PUT', 'DELETE']):
+            __json__ = await request.json()
+        return __catch_all__(request['path'], request=request, response_handler=fastapi_response_handler, __json=__json__)
 
 if (__name__ == '__main__'):
 
@@ -282,5 +286,4 @@ if (__name__ == '__main__'):
             server.install_signal_handlers = lambda: None
             await server.serve() 
 
-        import asyncio
         asyncio.run(run(app=app, host=__host__, port=__port__, reload=True, logger=logger))
