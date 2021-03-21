@@ -112,8 +112,11 @@ if (0):
 
 assert (__env__.get('use_flask', False)) or (__env__.get('use_fastapi', False)), 'Must use either flask OR fastapi so choose one of them, not neither. Make a choice!'
 
-is_serverMode_flask = lambda : __server_mode__ == ServerMode.use_flask
-is_serverMode_fastapi = lambda : __server_mode__ == ServerMode.use_fastapi
+__is_serverMode_flask = lambda sm: sm == ServerMode.use_flask
+__is_serverMode_fastapi = lambda sm: sm == ServerMode.use_fastapi
+
+is_serverMode_flask = lambda : __is_serverMode_flask(__server_mode__)
+is_serverMode_fastapi = lambda : __is_serverMode_fastapi(__server_mode__)
 
 if (is_serverMode_flask()):
     from flask import Flask, request, Response
@@ -132,7 +135,7 @@ if (is_serverMode_fastapi()):
 
     from starlette.exceptions import HTTPException
     from starlette.middleware.cors import CORSMiddleware
-    from starlette.status import HTTP_422_UNPROCESSABLE_ENTITY
+    from starlette.status import HTTP_422_UNPROCESSABLE_ENTITY, HTTP_200_OK
 
     def get_application(title=__name__, debug=None, version=None):
         application = FastAPI(title=title, debug=debug, version=version)
@@ -161,10 +164,10 @@ if (is_serverMode_fastapi()):
         return application 
     app = get_application(title=__name__, debug=False, version='2.1.0')
 
-service_runner = ServiceRunner(__env__.get('plugins'), logger=logger, debug=is_debugging)
+service_runner = ServiceRunner(__env__.get('plugins'), serverMode=__server_mode__, is_serverMode_flask=__is_serverMode_flask, is_serverMode_fastapi=__is_serverMode_fastapi, logger=logger, debug=is_debugging)
 
 def __catch_all__(path, request=None, response_handler=None):
-    the_path = path.split('/')
+    the_path = [p for p in path.split('/') if (len(str(p)) > 0)]
     the_response = {"path": '/'.join(the_path[1:])}
     __fp_plugins__ = [__env__.get('plugins')]
     print('request.method -> {}'.format(request.method))
@@ -210,8 +213,8 @@ def __catch_all__(path, request=None, response_handler=None):
                                     fOut.write('{}\n'.format('#'*40))
                                     fOut.write('\n\n')
                                     fOut.flush()
-                            if (is_debugging or request.args.get('DEBUG', False)):
-                                the_response['__plugins__'][fp_plugins]['query_params'] = request.args
+                            if (is_debugging or (request.args if (is_serverMode_flask()) else request.query_params).get('DEBUG', False)):
+                                the_response['__plugins__'][fp_plugins]['query_params'] = request.args if (is_serverMode_flask()) else request.query_params
                                 the_response['__plugins__'][fp_plugins]['modules'] = service_runner.modules.get(fp_plugins)
                                 the_response['__plugins__'][fp_plugins]['endpoints'] = expose.get_endpoints(for_root=fp_plugins)
                                 the_response['__plugins__'][fp_plugins]['imports'] = service_runner.imports.get(fp_plugins)
@@ -226,7 +229,7 @@ def __catch_all__(path, request=None, response_handler=None):
             else:
                 return json.dumps({'success':False}), 404, {'ContentType':'application/json'}
         except Exception as ex:
-            print(_utils.formattedException(details=ex))
+            logger.exception('EXCEPTION', ex)
             return json.dumps({'success':False, 'reason': str(ex)}), 404, {'ContentType':'application/json'}
     __response__ = None
     if (callable(response_handler)):
@@ -247,11 +250,13 @@ if (is_serverMode_flask()):
     
 if (is_serverMode_fastapi()):
     def fastapi_response_handler(content, **kwargs):
-        return Response(content, **kwargs)
+        return JSONResponse(
+            json.loads(content), status_code=HTTP_200_OK,
+        )
     
     @app.route("/{full_path:path}")
-    async def fastapi_catch_all(path):
-        return __catch_all__(path, request=Request, response_handler=fastapi_response_handler)
+    async def fastapi_catch_all(request):
+        return __catch_all__(request['path'], request=request, response_handler=fastapi_response_handler)
 
 if (__name__ == '__main__'):
 
