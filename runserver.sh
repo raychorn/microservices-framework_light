@@ -74,6 +74,13 @@ do_it(){
         echo "use_fastapi !!!"
         python $dir1/httpd.py
     fi
+    echo "use_django=$use_django"
+    if [ "$use_django" = "True" ]
+    then
+        echo "use_django !!!"
+        cd $dir1/django/microservices_lite
+        python manage.py runserver
+    fi
 }
 
 do_it #>./logs/runserver_report.txt 2>&1

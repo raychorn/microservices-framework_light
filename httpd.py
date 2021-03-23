@@ -8,13 +8,16 @@ from logging.handlers import RotatingFileHandler
 
 from datetime import datetime
 
-if (os.environ.get('libs')):
-    pylibs = os.environ.get('libs')
+from dotenv import load_dotenv, find_dotenv
+load_dotenv(find_dotenv())
+
+pylibs = os.environ.get('libs', os.sep.join([os.path.dirname(__file__), 'libs'])).replace('.{}'.format(os.sep), os.path.dirname(__file__)+os.sep)
+if (os.path.exists(pylibs)):
     if (not any([f == pylibs for f in sys.path])):
         sys.path.insert(0, pylibs)
 
-if (os.environ.get('vyperlogix_lib3')):
-    pylib = os.environ.get('vyperlogix_lib3')
+pylib = os.environ.get('vyperlogix_lib3', os.sep.join([os.path.dirname(os.path.dirname(__file__)), 'private_vyperlogix_lib3']))
+if (os.path.exists(pylib)):
     if (not any([f == pylib for f in sys.path])):
         sys.path.insert(0, pylib)
     
@@ -79,6 +82,7 @@ __env__ = getattr(m, '__env__')
 
 assert os.path.exists(__env__.get('plugins')), 'Missing the plugins path, check your .env file.'
 
+
 is_debugging = __env__.get('debug', False)
 is_debugging = True if (is_debugging) else False
 
@@ -86,15 +90,23 @@ class ServerMode(enum.Enum):
     use_none = 0
     use_flask = 1
     use_fastapi = 2
+    use_django = 4
 
 __server_mode__ = ServerMode.use_none
 if (__env__.get('use_flask', False)):
     __server_mode__ = ServerMode.use_flask
-    assert not __env__.get('use_fastapi', False), 'Cannot use both flask and fastapi so choose one of them, not both.'
+    assert not __env__.get('use_fastapi', False), 'Cannot use flask and fastapi so choose one of them, not more than one.'
+    assert not __env__.get('use_django', False), 'Cannot use both flask and django so choose one of them, not more than one.'
 
 if (__env__.get('use_fastapi', False)):
     __server_mode__ = ServerMode.use_fastapi
-    assert not __env__.get('use_flask', False), 'Cannot use both flask and fastapi so choose one of them, not both.'
+    assert not __env__.get('use_flask', False), 'Cannot use both flask and fastapi so choose one of them, not more than one.'
+    assert not __env__.get('use_django', False), 'Cannot use both fastapi and django so choose one of them, not more than one.'
+
+if (__env__.get('use_django', False)):
+    __server_mode__ = ServerMode.use_django
+    assert not __env__.get('use_flask', False), 'Cannot use both flask and django so choose one of them, not more than one.'
+    assert not __env__.get('use_fastapi', False), 'Cannot use both fastapi and django so choose one of them, not more than one.'
 
 if (0):
     def is_running_fastapi_correctly():
@@ -111,13 +123,15 @@ if (0):
     if (__env__.get('use_fastapi', False)):
         assert is_running_fastapi_correctly() == True, 'You must use the "fastapi-launcher.py" to run this framework with "use_fastapi=True".  Please get it together.'
 
-assert (__env__.get('use_flask', False)) or (__env__.get('use_fastapi', False)), 'Must use either flask OR fastapi so choose one of them, not neither. Make a choice!'
+assert (__env__.get('use_flask', False)) or (__env__.get('use_fastapi', False)) or (__env__.get('use_django', False)), 'Must use either flask OR fastapi OR fjango so choose one of them, not none. Make a choice!'
 
 __is_serverMode_flask = lambda sm: sm == ServerMode.use_flask
 __is_serverMode_fastapi = lambda sm: sm == ServerMode.use_fastapi
+__is_serverMode_django = lambda sm: sm == ServerMode.use_django
 
 is_serverMode_flask = lambda : __is_serverMode_flask(__server_mode__)
 is_serverMode_fastapi = lambda : __is_serverMode_fastapi(__server_mode__)
+is_serverMode_django = lambda : __is_serverMode_django(__server_mode__)
 
 if (is_serverMode_flask()):
     from flask import Flask, request, Response
