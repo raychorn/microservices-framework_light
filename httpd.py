@@ -3,9 +3,6 @@ import sys
 import enum
 import asyncio
 
-import logging
-from logging.handlers import RotatingFileHandler
-
 from datetime import datetime
 
 from dotenv import load_dotenv, find_dotenv
@@ -20,7 +17,7 @@ pylib = os.environ.get('vyperlogix_lib3', os.sep.join([os.path.dirname(os.path.d
 if (os.path.exists(pylib)):
     if (not any([f == pylib for f in sys.path])):
         sys.path.insert(0, pylib)
-    
+
 from vyperlogix.misc import _utils
 from vyperlogix.decorators import expose
 from vyperlogix.iterators.dict import dictutils
@@ -29,49 +26,58 @@ from vyperlogix.plugins import handler as plugins_handler
 
 import mujson as json
 
-is_really_something = lambda s,t:s and t(s)
-something_greater_than_zero = lambda s:(s > 0)
+logger = None
 
-default_timestamp = lambda t:t.isoformat().replace(':', '').replace('-','').split('.')[0]
-
-is_uppercase = lambda ch:''.join([c for c in str(ch) if c.isupper()])
-
-def get_stream_handler(streamformat="%(asctime)s:%(levelname)s:%(message)s"):
-    stream = logging.StreamHandler()
-    stream.setLevel(logging.INFO)
-    stream.setFormatter(logging.Formatter(streamformat))
-    return stream
-
+if (0):
+    import logging
+    from logging.handlers import RotatingFileHandler
     
-def setup_rotating_file_handler(logname, logfile, max_bytes, backup_count):
-    assert is_really_something(backup_count, something_greater_than_zero), 'Missing backup_count?'
-    assert is_really_something(max_bytes, something_greater_than_zero), 'Missing max_bytes?'
-    ch = RotatingFileHandler(logfile, 'a', max_bytes, backup_count)
-    l = logging.getLogger(logname)
-    l.addHandler(ch)
-    return l
+    is_really_something = lambda s,t:s and t(s)
+    something_greater_than_zero = lambda s:(s > 0)
 
-production_token = 'production'
+    default_timestamp = lambda t:t.isoformat().replace(':', '').replace('-','').split('.')[0]
 
-base_filename = os.path.splitext(os.path.basename(__file__))[0]
+    is_uppercase = lambda ch:''.join([c for c in str(ch) if c.isupper()])
 
-log_filename = '{}{}{}{}{}{}{}_{}.log'.format('logs', os.sep, base_filename, os.sep, production_token, os.sep, base_filename, default_timestamp(datetime.utcnow()))
+    def get_stream_handler(streamformat="%(asctime)s:%(levelname)s:%(message)s"):
+        stream = logging.StreamHandler()
+        stream.setLevel(logging.INFO)
+        stream.setFormatter(logging.Formatter(streamformat))
+        return stream
 
-if not os.path.exists(os.path.dirname(log_filename)):
-    os.makedirs(os.path.dirname(log_filename))
+        
+    def setup_rotating_file_handler(logname, logfile, max_bytes, backup_count):
+        assert is_really_something(backup_count, something_greater_than_zero), 'Missing backup_count?'
+        assert is_really_something(max_bytes, something_greater_than_zero), 'Missing max_bytes?'
+        ch = RotatingFileHandler(logfile, 'a', max_bytes, backup_count)
+        l = logging.getLogger(logname)
+        l.addHandler(ch)
+        return l
 
-if (os.path.exists(log_filename)):
-    os.remove(log_filename)
+    production_token = 'production'
 
-log_format = ('[%(asctime)s] %(levelname)-8s %(name)-12s %(message)s')
-logging.basicConfig(
-    level=logging.DEBUG,
-    format=log_format,
-    filename=(log_filename),
-)
+    base_filename = os.path.splitext(os.path.basename(__file__))[0]
 
-logger = setup_rotating_file_handler(base_filename, log_filename, (1024*1024*1024), 10)
-logger.addHandler(get_stream_handler())
+    log_filename = '{}{}{}{}{}{}{}_{}.log'.format('logs', os.sep, base_filename, os.sep, production_token, os.sep, base_filename, default_timestamp(datetime.utcnow()))
+
+    if not os.path.exists(os.path.dirname(log_filename)):
+        os.makedirs(os.path.dirname(log_filename))
+
+    if (os.path.exists(log_filename)):
+        os.remove(log_filename)
+
+    log_format = ('[%(asctime)s] %(levelname)-8s %(name)-12s %(message)s')
+    logging.basicConfig(
+        level=logging.DEBUG,
+        format=log_format,
+        filename=(log_filename),
+    )
+
+    logger = setup_rotating_file_handler(base_filename, log_filename, (1024*1024*1024), 10)
+    logger.addHandler(get_stream_handler())
+else:
+    from libs import __utils__
+    logger = __utils__.get_logger()
 
 from libs import __env__
 m = sys.modules.get('libs.__env__')
@@ -86,27 +92,30 @@ assert os.path.exists(__env__.get('plugins')), 'Missing the plugins path, check 
 is_debugging = __env__.get('debug', False)
 is_debugging = True if (is_debugging) else False
 
-class ServerMode(enum.Enum):
-    use_none = 0
-    use_flask = 1
-    use_fastapi = 2
-    use_django = 4
+if (0):
+    class ServerMode(enum.Enum):
+        use_none = 0
+        use_flask = 1
+        use_fastapi = 2
+        use_django = 4
 
-__server_mode__ = ServerMode.use_none
-if (__env__.get('use_flask', False)):
-    __server_mode__ = ServerMode.use_flask
-    assert not __env__.get('use_fastapi', False), 'Cannot use flask and fastapi so choose one of them, not more than one.'
-    assert not __env__.get('use_django', False), 'Cannot use both flask and django so choose one of them, not more than one.'
+    __server_mode__ = ServerMode.use_none
+    if (__env__.get('use_flask', False)):
+        __server_mode__ = ServerMode.use_flask
+        assert not __env__.get('use_fastapi', False), 'Cannot use flask and fastapi so choose one of them, not more than one.'
+        assert not __env__.get('use_django', False), 'Cannot use both flask and django so choose one of them, not more than one.'
 
-if (__env__.get('use_fastapi', False)):
-    __server_mode__ = ServerMode.use_fastapi
-    assert not __env__.get('use_flask', False), 'Cannot use both flask and fastapi so choose one of them, not more than one.'
-    assert not __env__.get('use_django', False), 'Cannot use both fastapi and django so choose one of them, not more than one.'
+    if (__env__.get('use_fastapi', False)):
+        __server_mode__ = ServerMode.use_fastapi
+        assert not __env__.get('use_flask', False), 'Cannot use both flask and fastapi so choose one of them, not more than one.'
+        assert not __env__.get('use_django', False), 'Cannot use both fastapi and django so choose one of them, not more than one.'
 
-if (__env__.get('use_django', False)):
-    __server_mode__ = ServerMode.use_django
-    assert not __env__.get('use_flask', False), 'Cannot use both flask and django so choose one of them, not more than one.'
-    assert not __env__.get('use_fastapi', False), 'Cannot use both fastapi and django so choose one of them, not more than one.'
+    if (__env__.get('use_django', False)):
+        __server_mode__ = ServerMode.use_django
+        assert not __env__.get('use_flask', False), 'Cannot use both flask and django so choose one of them, not more than one.'
+        assert not __env__.get('use_fastapi', False), 'Cannot use both fastapi and django so choose one of them, not more than one.'
+else:
+    __server_mode__ = __utils__.get_server_mode(environ=__env__)
 
 if (0):
     def is_running_fastapi_correctly():
@@ -123,15 +132,17 @@ if (0):
     if (__env__.get('use_fastapi', False)):
         assert is_running_fastapi_correctly() == True, 'You must use the "fastapi-launcher.py" to run this framework with "use_fastapi=True".  Please get it together.'
 
+
 assert (__env__.get('use_flask', False)) or (__env__.get('use_fastapi', False)) or (__env__.get('use_django', False)), 'Must use either flask OR fastapi OR fjango so choose one of them, not none. Make a choice!'
 
-__is_serverMode_flask = lambda sm: sm == ServerMode.use_flask
-__is_serverMode_fastapi = lambda sm: sm == ServerMode.use_fastapi
-__is_serverMode_django = lambda sm: sm == ServerMode.use_django
+if (0):
+    __is_serverMode_flask = lambda sm: sm == ServerMode.use_flask
+    __is_serverMode_fastapi = lambda sm: sm == ServerMode.use_fastapi
+    __is_serverMode_django = lambda sm: sm == ServerMode.use_django
 
-is_serverMode_flask = lambda : __is_serverMode_flask(__server_mode__)
-is_serverMode_fastapi = lambda : __is_serverMode_fastapi(__server_mode__)
-is_serverMode_django = lambda : __is_serverMode_django(__server_mode__)
+is_serverMode_flask = lambda : __utils__.__is_serverMode_flask(__server_mode__)
+is_serverMode_fastapi = lambda : __utils__.__is_serverMode_fastapi(__server_mode__)
+is_serverMode_django = lambda : __utils__.__is_serverMode_django(__server_mode__)
 
 if (is_serverMode_flask()):
     from flask import Flask, request, Response
