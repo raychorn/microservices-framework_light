@@ -1,28 +1,18 @@
-"""microservices_lite URL Configuration
-
-The `urlpatterns` list routes URLs to views. For more information please see:
-    https://docs.djangoproject.com/en/3.1/topics/http/urls/
-Examples:
-Function views
-    1. Add an import:  from my_app import views
-    2. Add a URL to urlpatterns:  path('', views.home, name='home')
-Class-based views
-    1. Add an import:  from other_app.views import Home
-    2. Add a URL to urlpatterns:  path('', Home.as_view(), name='home')
-Including another URLconf
-    1. Import the include() function: from django.urls import include, path
-    2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
-"""
 import os
 import sys
 from django.contrib import admin
-from django.urls import path
+from django.urls import include, path
 
 from django.http import HttpResponseRedirect
 from django.shortcuts import render
 from django.views import View
-
+from django.conf.urls import handler404
 from django.http import JsonResponse
+
+from dotenv import load_dotenv, find_dotenv
+load_dotenv(find_dotenv())
+
+assert os.environ.get('vyperlogix_lib3'), 'Cannot find the environment file.'
 
 __is__ = False
 fpath = os.path.dirname(__file__)
@@ -35,26 +25,40 @@ while (1):
     fpath = os.path.dirname(fpath)
 
 __root = fpath
-module_name = fpath.split(os.sep)[-1]
-if (not any([f ==__root > -1 for f in sys.path])):
+if (not any([f == __root for f in sys.path])):
     sys.path.insert(0, __root)
+
+from libs import __catchall__ as catch_all
+
+pylib3=os.environ.get('vyperlogix_lib3')
+if (os.path.exists(pylib3)) and (not any([f == pylib3 for f in sys.path])):
+    sys.path.insert(0, pylib3)
 
     
 class MyView(View):
-
+    
     def get(self, request, *args, **kwargs):
-        return render(request, self.template_name, {'form': form})
+        return render(request, self.template_name)
 
     def post(self, request, *args, **kwargs):
-        return render(request, self.template_name, {'form': form})
+        return render(request, self.template_name)
     
     def put(self, request, *args, **kwargs):
-        return render(request, self.template_name, {'form': form})
+        return render(request, self.template_name)
 
     def delete(self, request, *args, **kwargs):
-        return render(request, self.template_name, {'form': form})
+        return render(request, self.template_name)
     
+from vyperlogix.django.django_utils import get_optionals
+
+optionals = get_optionals(MyView.as_view(), num_url_parms=eval(os.environ.get('NUM_URL_PARMS', default=10)))
+
 urlpatterns = [
-    #path('admin/', admin.site.urls),
-    path(r'.*', MyView.as_view())
+    path('<slug:uuid>/', include(optionals) ),
+    path('<slug:uuid>/', include(optionals) ),
+    
+    #path(r'^$', MyView.as_view()),
 ]
+
+from views import  catchall
+handler404 = catchall

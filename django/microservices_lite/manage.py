@@ -19,6 +19,4 @@ def main():
 
 
 if (__name__ == '__main__'):
-    #sys.argv.append('runserver')
-    #sys.argv.append('0.0.0.0:9999')
     main()
