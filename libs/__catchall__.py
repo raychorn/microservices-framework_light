@@ -73,7 +73,7 @@ def __catch_all__(path, request=None, response_handler=None, __json=None, logger
     __response__ = None
     if (callable(response_handler)):
         try:
-            __response__ = response_handler(json.dumps(dictutils.json_cleaner(the_response)), mimetype='application/json')
+            __response__ = response_handler(json.dumps(dictutils.json_cleaner(the_response)) if (not is_serverMode_django()) else the_response, mimetype='application/json')
         except:
             pass
     return __response__
