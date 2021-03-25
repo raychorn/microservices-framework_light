@@ -1,7 +1,7 @@
 import os
 from mujson import json
 
-def __catch_all__(path, request=None, response_handler=None, __json=None, logger=None, service_runner=None, is_serverMode_flask=None, __env__=None, is_debugging=False, dictutils=None):
+def __catch_all__(path, request=None, response_handler=None, __json=None, logger=None, service_runner=None, is_serverMode_flask=None, is_serverMode_django=None, __env__=None, is_debugging=False, dictutils=None):
     the_path = [p for p in path.split('/') if (len(str(p)) > 0)]
     the_response = {"path": '/'.join(the_path[1:])}
     __fp_plugins__ = [__env__.get('plugins')]

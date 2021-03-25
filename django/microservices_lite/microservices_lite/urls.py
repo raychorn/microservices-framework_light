@@ -7,6 +7,7 @@ from django.shortcuts import render
 from django.views import View
 from django.conf.urls import handler404
 from django.http import JsonResponse
+from django.urls import include, path
 
 from dotenv import load_dotenv, find_dotenv
 load_dotenv(find_dotenv())
@@ -59,7 +60,7 @@ service_runner = ServiceRunner(__env__.get('plugins'), serverMode=__server_mode_
 class MyView(View):
     
     def __catch_all__(self, path, request=None, response_handler=None, __json=None, logger=None, service_runner=None, is_serverMode_flask=None, __env__=None, is_debugging=False, dictutils=None):
-        return catch_all.__catch_all__(path, request=request, response_handler=response_handler, __json=__json, logger=logger, service_runner=service_runner, is_serverMode_flask=is_serverMode_flask, __env__=__env__, is_debugging=is_debugging, dictutils=dictutils)
+        return catch_all.__catch_all__(path, request=request, response_handler=response_handler, __json=__json, logger=logger, service_runner=service_runner, is_serverMode_flask=is_serverMode_flask, is_serverMode_django=is_serverMode_django, __env__=__env__, is_debugging=is_debugging, dictutils=dictutils)
     
     def get(self, request, *args, **kwargs):
         return self.__catch_all__(request.path, request=request, logger=logger, service_runner=service_runner, is_serverMode_flask=is_serverMode_flask, __env__=__env__, dictutils=dictutils)
