@@ -1,6 +1,10 @@
 import os
 from mujson import json
 
+from vyperlogix.decorators import expose
+
+normalize_query_params = lambda r : dict([tuple([k,v]) for k,v in r.items()])
+
 def __catch_all__(path, request=None, response_handler=None, __json=None, logger=None, service_runner=None, is_serverMode_flask=None, is_serverMode_django=None, __env__=None, is_debugging=False, dictutils=None):
     the_path = [p for p in path.split('/') if (len(str(p)) > 0)]
     the_response = {"path": '/'.join(the_path[1:])}
@@ -48,8 +52,8 @@ def __catch_all__(path, request=None, response_handler=None, __json=None, logger
                                     fOut.write('{}\n'.format('#'*40))
                                     fOut.write('\n\n')
                                     fOut.flush()
-                            if (is_debugging or (request.args if (is_serverMode_flask()) else request.query_params).get('DEBUG', False)):
-                                the_response['__plugins__'][fp_plugins]['query_params'] = request.args if (is_serverMode_flask()) else request.query_params
+                            if (is_debugging or (request.args.get('DEBUG', False) if (is_serverMode_flask()) else request.query_params).get('DEBUG', False)):
+                                the_response['__plugins__'][fp_plugins]['query_params'] = normalize_query_params(request.args) if (is_serverMode_flask()) else normalize_query_params(request.query_params) if (not is_serverMode_django()) else normalize_query_params(request.GET)
                                 the_response['__plugins__'][fp_plugins]['modules'] = service_runner.modules.get(fp_plugins)
                                 the_response['__plugins__'][fp_plugins]['endpoints'] = expose.get_endpoints(for_root=fp_plugins)
                                 the_response['__plugins__'][fp_plugins]['imports'] = service_runner.imports.get(fp_plugins)

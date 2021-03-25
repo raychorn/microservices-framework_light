@@ -190,7 +190,7 @@ if (is_serverMode_fastapi()):
         return application 
     app = get_application(title=__name__, debug=False, version='2.1.0')
 
-service_runner = ServiceRunner(__env__.get('plugins'), serverMode=__server_mode__, is_serverMode_flask=__is_serverMode_flask, is_serverMode_fastapi=__is_serverMode_fastapi, logger=logger, debug=is_debugging)
+service_runner = ServiceRunner(__env__.get('plugins'), serverMode=__server_mode__, is_serverMode_flask=__utils__.__is_serverMode_flask, is_serverMode_fastapi=__utils__.__is_serverMode_fastapi, logger=logger, debug=is_debugging)
 
 from libs import __catchall__ as catch_all
 
