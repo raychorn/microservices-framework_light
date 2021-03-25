@@ -57,22 +57,26 @@ from vyperlogix.plugins.services import ServiceRunnerLite as ServiceRunner
 
 service_runner = ServiceRunner(__env__.get('plugins'), serverMode=__server_mode__, is_serverMode_flask=__utils__.__is_serverMode_flask, is_serverMode_fastapi=__utils__.__is_serverMode_fastapi, logger=logger, debug=False)
 
+def django_response_handler(content, **kwargs):
+    from django.http import JsonResponse
+    return JsonResponse(content)
+
 class MyView(View):
     
     def __catch_all__(self, path, request=None, response_handler=None, __json=None, logger=None, service_runner=None, is_serverMode_flask=None, __env__=None, is_debugging=False, dictutils=None):
         return catch_all.__catch_all__(path, request=request, response_handler=response_handler, __json=__json, logger=logger, service_runner=service_runner, is_serverMode_flask=is_serverMode_flask, is_serverMode_django=is_serverMode_django, __env__=__env__, is_debugging=is_debugging, dictutils=dictutils)
     
     def get(self, request, *args, **kwargs):
-        return self.__catch_all__(request.path, request=request, logger=logger, service_runner=service_runner, is_serverMode_flask=is_serverMode_flask, __env__=__env__, dictutils=dictutils)
+        return self.__catch_all__(request.path, request=request, logger=logger, service_runner=service_runner, is_serverMode_flask=is_serverMode_flask, __env__=__env__, response_handler=django_response_handler, dictutils=dictutils)
 
     def post(self, request, *args, **kwargs):
-        return self.__catch_all__(request.path, request=request, logger=logger, service_runner=service_runner, is_serverMode_flask=is_serverMode_flask, __env__=__env__, dictutils=dictutils)
+        return self.__catch_all__(request.path, request=request, logger=logger, service_runner=service_runner, is_serverMode_flask=is_serverMode_flask, __env__=__env__, response_handler=django_response_handler, dictutils=dictutils)
     
     def put(self, request, *args, **kwargs):
-        return self.__catch_all__(request.path, request=request, logger=logger, service_runner=service_runner, is_serverMode_flask=is_serverMode_flask, __env__=__env__, dictutils=dictutils)
+        return self.__catch_all__(request.path, request=request, logger=logger, service_runner=service_runner, is_serverMode_flask=is_serverMode_flask, __env__=__env__, response_handler=django_response_handler, dictutils=dictutils)
 
     def delete(self, request, *args, **kwargs):
-        return self.__catch_all__(request.path, request=request, logger=logger, service_runner=service_runner, is_serverMode_flask=is_serverMode_flask, __env__=__env__, dictutils=dictutils)
+        return self.__catch_all__(request.path, request=request, logger=logger, service_runner=service_runner, is_serverMode_flask=is_serverMode_flask, __env__=__env__, response_handler=django_response_handler, dictutils=dictutils)
 
 
 from vyperlogix.django.django_utils import get_optionals
