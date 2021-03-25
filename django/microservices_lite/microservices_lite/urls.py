@@ -28,11 +28,11 @@ __root = fpath
 if (not any([f == __root for f in sys.path])):
     sys.path.insert(0, __root)
 
-from libs import __catchall__ as catch_all
-
 pylib3=os.environ.get('vyperlogix_lib3')
 if (os.path.exists(pylib3)) and (not any([f == pylib3 for f in sys.path])):
     sys.path.insert(0, pylib3)
+
+from libs import __catchall__ as catch_all
 
 from libs import __utils__
 logger = __utils__.get_logger()
