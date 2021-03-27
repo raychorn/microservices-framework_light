@@ -8,6 +8,8 @@ normalize_query_params = lambda r : dict([tuple([k,v]) for k,v in r.items()])
 def __catch_all__(path, request=None, response_handler=None, __json=None, logger=None, service_runner=None, is_serverMode_flask=None, is_serverMode_django=None, __env__=None, is_debugging=False, dictutils=None):
     def request_query_params(request, is_serverMode_flask=None, is_serverMode_django=None):
         return request.args if (is_serverMode_flask()) else request.query_params if (not is_serverMode_django()) else request.GET
+    def request_get_json(request, is_serverMode_flask=None, is_serverMode_django=None):
+        return request.get_json() if (is_serverMode_flask()) else __json if (not is_serverMode_django()) else json.loads(request.body.decode("utf-8"))
     the_path = [p for p in path.split('/') if (len(str(p)) > 0)]
     the_response = {"path": '/'.join(the_path[1:])}
     __fp_plugins__ = [__env__.get('plugins')]
@@ -16,7 +18,7 @@ def __catch_all__(path, request=None, response_handler=None, __json=None, logger
         try:
             uuid = the_path[0] if (len(the_path) > 0) else None
             if (uuid == __env__.get('__uuid__')):
-                d = request.get_json() if (is_serverMode_flask()) else __json
+                d = request_get_json(request, is_serverMode_flask=is_serverMode_flask, is_serverMode_django=is_serverMode_django)
                 logger.info(json.dumps(d, indent=3))
                 logger.info('-'*30)
                 d = service_runner.resolve(request, data=d, path=the_path, plugins=__fp_plugins__)

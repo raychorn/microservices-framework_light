@@ -21,10 +21,7 @@ content-type: application/json
 
 {
     "data": {
-        "id": "",
         "name": "Dynamic Pluggable Microservice Framework",
-        "description": "",
-        "url": ""
     }
 }
 
