@@ -55,7 +55,7 @@ is_serverMode_django = lambda : __utils__.__is_serverMode_django(__server_mode__
 from vyperlogix.iterators.dict import dictutils
 from vyperlogix.plugins.services import ServiceRunnerLite as ServiceRunner
 
-service_runner = ServiceRunner(__env__.get('plugins'), serverMode=__server_mode__, is_serverMode_flask=__utils__.__is_serverMode_flask, is_serverMode_fastapi=__utils__.__is_serverMode_fastapi, logger=logger, debug=False)
+service_runner = ServiceRunner(__env__.get('plugins'), serverMode=__server_mode__, is_serverMode_flask=__utils__.__is_serverMode_flask, is_serverMode_fastapi=__utils__.__is_serverMode_fastapi, is_serverMode_django=__utils__.__is_serverMode_django, logger=logger, debug=False)
 
 def django_response_handler(content, **kwargs):
     from django.http import JsonResponse
