@@ -52,7 +52,8 @@ def __catch_all__(path, request=None, response_handler=None, __json=None, logger
                                     fOut.write('{}\n'.format('#'*40))
                                     fOut.write('\n\n')
                                     fOut.flush()
-                            if (is_debugging or (request.args.get('DEBUG', False) if (is_serverMode_flask()) else request.query_params.get('DEBUG', False) if (not is_serverMode_django()) else request.GET.get('DEBUG', False))):
+                            __is__ = eval(request.args.get('DEBUG', False) if (is_serverMode_flask()) else request.query_params.get('DEBUG', False) if (not is_serverMode_django()) else request.GET.get('DEBUG', False))
+                            if (is_debugging or __is__):
                                 the_response['__plugins__'][fp_plugins]['query_params'] = normalize_query_params(request.args) if (is_serverMode_flask()) else normalize_query_params(request.query_params) if (not is_serverMode_django()) else normalize_query_params(request.GET)
                                 the_response['__plugins__'][fp_plugins]['modules'] = service_runner.modules.get(fp_plugins)
                                 the_response['__plugins__'][fp_plugins]['endpoints'] = expose.get_endpoints(for_root=fp_plugins)

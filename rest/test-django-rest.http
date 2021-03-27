@@ -8,15 +8,15 @@ GET http://127.0.0.1:8000/4a1bf01e-0693-48c5-a52b-fc275205c1d8/__directory__/?DE
 
 ###
 
-GET http://172.26.30.249:9999/4a1bf01e-0693-48c5-a52b-fc275205c1d8/word-cloud-cluster/get-all-articles/ HTTP/1.1
+GET http://127.0.0.1:8000/4a1bf01e-0693-48c5-a52b-fc275205c1d8/word-cloud-cluster/get-all-articles/ HTTP/1.1
 
 ###
 
-GET http://172.26.30.249:9999/4a1bf01e-0693-48c5-a52b-fc275205c1d8/word-cloud-cluster/get-one-article/6020284ff8341c3da80b8682/ HTTP/1.1
+GET http://127.0.0.1:8000/4a1bf01e-0693-48c5-a52b-fc275205c1d8/word-cloud-cluster/get-one-article/6020284ff8341c3da80b8682/ HTTP/1.1
 
 ###
 
-POST http://172.26.30.249:9999/4a1bf01e-0693-48c5-a52b-fc275205c1d8/word-cloud-cluster/update-one-article/6020284ff8341c3da80b8682/?debug=1 HTTP/1.1
+POST http://127.0.0.1:8000/4a1bf01e-0693-48c5-a52b-fc275205c1d8/word-cloud-cluster/update-one-article/6020284ff8341c3da80b8682/?debug=1 HTTP/1.1
 content-type: application/json
 
 {
@@ -30,7 +30,7 @@ content-type: application/json
 
 ###
 
-POST http://172.26.30.249:9999/4a1bf01e-0693-48c5-a52b-fc275205c1d8/word-cloud-cluster/add-one-article/?debug=1 HTTP/1.1
+POST http://127.0.0.1:8000/4a1bf01e-0693-48c5-a52b-fc275205c1d8/word-cloud-cluster/add-one-article/?debug=1 HTTP/1.1
 content-type: application/json
 
 {
@@ -45,7 +45,7 @@ content-type: application/json
 
 ###
 
-POST http://172.26.30.249:9999/4a1bf01e-0693-48c5-a52b-fc275205c1d8/v1/hello-world/ HTTP/1.1
+POST http://127.0.0.1:8000/4a1bf01e-0693-48c5-a52b-fc275205c1d8/v1/hello-world/ HTTP/1.1
 content-type: application/json
 
 {
@@ -57,7 +57,7 @@ content-type: application/json
 
 ###
 
-POST http://172.26.30.249:9999/4a1bf01e-0693-48c5-a52b-fc275205c1d8/word-cloud-cluster/get-all-articles/ HTTP/1.1
+POST http://127.0.0.1:8000/4a1bf01e-0693-48c5-a52b-fc275205c1d8/word-cloud-cluster/get-all-articles/ HTTP/1.1
 content-type: application/json
 
 {
