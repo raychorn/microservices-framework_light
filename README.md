@@ -16,6 +16,12 @@ Based on Flask.
 3. No Database Support but you can roll your own.
 4. No Security Support other than the __ID__ for each module which must appear in each URL.
 
+### Web Framework Agnostic
+
+1. Works with Flask and gunicorn.
+2. Works with FastAPI and uvicorn.
+3. Works with Django and wsgi or whatever else Django supports for deployment.
+
 
 ## Getting Started <a name = "getting_started"></a>
 
