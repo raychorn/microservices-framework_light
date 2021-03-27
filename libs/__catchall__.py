@@ -21,7 +21,7 @@ def __catch_all__(path, request=None, response_handler=None, __json=None, logger
                 d = request_get_json(request, is_serverMode_flask=is_serverMode_flask, is_serverMode_django=is_serverMode_django)
                 logger.info(json.dumps(d, indent=3))
                 logger.info('-'*30)
-                d = service_runner.resolve(request, data=d, path=the_path, plugins=__fp_plugins__)
+                d = service_runner.resolve(request, data=d, path=the_path, plugins=__fp_plugins__, request_query_params=request_query_params)
                 if (d is not None):
                     the_response['response'] = d
                 else:
