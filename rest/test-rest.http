@@ -4,7 +4,7 @@ GET http://127.0.0.1:9999/ HTTP/1.1
 
 ###
 
-GET http://172.18.159.196:9999/4a1bf01e-0693-48c5-a52b-fc275205c1d8/__directory__/ HTTP/1.1
+GET http://172.18.159.196:9999/4a1bf01e-0693-48c5-a52b-fc275205c1d8/__directory__/?DEBUG=1 HTTP/1.1
 
 ###
 
@@ -21,10 +21,7 @@ content-type: application/json
 
 {
     "data": {
-        "id": "",
-        "name": "Dynamic Pluggable Microservice Framework",
-        "description": "",
-        "url": ""
+        "name": "Dynamic Pluggable Microservice Framework"
     }
 }
 

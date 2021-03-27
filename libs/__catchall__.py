@@ -7,7 +7,7 @@ normalize_query_params = lambda r : dict([tuple([k,v]) for k,v in r.items()])
 
 def __catch_all__(path, request=None, response_handler=None, __json=None, logger=None, service_runner=None, is_serverMode_flask=None, is_serverMode_django=None, __env__=None, is_debugging=False, dictutils=None):
     def request_query_params(request, is_serverMode_flask=None, is_serverMode_django=None):
-        return request.args if (is_serverMode_flask()) else request.query_params if (not is_serverMode_django()) else request.GET
+        return normalize_query_params(request.args if (is_serverMode_flask()) else request.query_params if (not is_serverMode_django()) else request.GET)
     def request_get_json(request, is_serverMode_flask=None, is_serverMode_django=None):
         return request.get_json() if (is_serverMode_flask()) else __json if (not is_serverMode_django()) else json.loads(request.body.decode("utf-8"))
     the_path = [p for p in path.split('/') if (len(str(p)) > 0)]
@@ -58,7 +58,7 @@ def __catch_all__(path, request=None, response_handler=None, __json=None, logger
                                     fOut.flush()
                             __is__ = eval(request_query_params(request, is_serverMode_flask=is_serverMode_flask, is_serverMode_django=is_serverMode_django).get('DEBUG', False))
                             if (is_debugging or __is__):
-                                the_response['__plugins__'][fp_plugins]['query_params'] = normalize_query_params(request.args) if (is_serverMode_flask()) else normalize_query_params(request.query_params) if (not is_serverMode_django()) else normalize_query_params(request.GET)
+                                the_response['__plugins__'][fp_plugins]['query_params'] = request_query_params(request, is_serverMode_flask=is_serverMode_flask, is_serverMode_django=is_serverMode_django)
                                 the_response['__plugins__'][fp_plugins]['modules'] = service_runner.modules.get(fp_plugins)
                                 the_response['__plugins__'][fp_plugins]['endpoints'] = expose.get_endpoints(for_root=fp_plugins)
                                 the_response['__plugins__'][fp_plugins]['imports'] = service_runner.imports.get(fp_plugins)
@@ -78,8 +78,8 @@ def __catch_all__(path, request=None, response_handler=None, __json=None, logger
     __response__ = None
     if (callable(response_handler)):
         try:
-            __response__ = response_handler(json.dumps(dictutils.json_cleaner(the_response)) if (not is_serverMode_django()) else the_response, mimetype='application/json')
-        except:
-            pass
+            __response__ = response_handler(json.dumps(dictutils.json_cleaner(the_response)) if ((not callable(is_serverMode_django)) or (not is_serverMode_django())) else the_response, mimetype='application/json')
+        except Exception as ex:
+            logger.exception('EXCEPTION -> {}'.format(request.method), ex)
     return __response__
 

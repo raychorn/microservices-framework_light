@@ -133,7 +133,7 @@ if (0):
         assert is_running_fastapi_correctly() == True, 'You must use the "fastapi-launcher.py" to run this framework with "use_fastapi=True".  Please get it together.'
 
 
-assert (__env__.get('use_flask', False)) or (__env__.get('use_fastapi', False)) or (__env__.get('use_django', False)), 'Must use either flask OR fastapi OR fjango so choose one of them, not none. Make a choice!'
+assert (__env__.get('use_flask', False)) or (__env__.get('use_fastapi', False)) or (__env__.get('use_django', False)), 'Must use either flask OR fastapi OR django so choose one of them, not none. Make a choice!'
 
 if (0):
     __is_serverMode_flask = lambda sm: sm == ServerMode.use_flask
