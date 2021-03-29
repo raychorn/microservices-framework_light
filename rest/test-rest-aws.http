@@ -1,0 +1,62 @@
+###
+
+GET http://127.0.0.1:9999/ HTTP/1.1
+
+###
+
+GET http://3.142.87.225:9999/4a1bf01e-0693-48c5-a52b-fc275205c1d8/__directory__/?DEBUG=1 HTTP/1.1
+
+###
+
+GET http://3.142.87.225:9999/4a1bf01e-0693-48c5-a52b-fc275205c1d8/word-cloud-cluster/get-all-articles/ HTTP/1.1
+
+###
+
+GET http://3.142.87.225:9999/4a1bf01e-0693-48c5-a52b-fc275205c1d8/word-cloud-cluster/get-one-article/6020284ff8341c3da80b8682/ HTTP/1.1
+
+###
+
+POST http://3.142.87.225:9999/4a1bf01e-0693-48c5-a52b-fc275205c1d8/word-cloud-cluster/update-one-article/6020284ff8341c3da80b8682/?debug=1 HTTP/1.1
+content-type: application/json
+
+{
+    "data": {
+        "name": "Dynamic Pluggable Microservice Framework"
+    }
+}
+
+###
+
+POST http://3.142.87.225:9999/4a1bf01e-0693-48c5-a52b-fc275205c1d8/word-cloud-cluster/add-one-article/?debug=1 HTTP/1.1
+content-type: application/json
+
+{
+    "data": {
+        "id": "",
+        "name": "@1",
+        "description": "@2",
+        "url": "@3"
+    }
+}
+
+
+###
+
+POST http://3.142.87.225:9999/4a1bf01e-0693-48c5-a52b-fc275205c1d8/v1/hello-world/ HTTP/1.1
+content-type: application/json
+
+{
+    "server": "172.24.125.247:27017",
+    "username": "root",
+    "password": "sisko@7660$boo",
+    "authenticationDatabase": "admin"
+}
+
+###
+
+POST http://3.142.87.225:9999/4a1bf01e-0693-48c5-a52b-fc275205c1d8/word-cloud-cluster/get-all-articles/ HTTP/1.1
+content-type: application/json
+
+{
+    "criteria": {"$text": {"$search": "Pub"}}
+}
