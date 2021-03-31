@@ -2,12 +2,14 @@
 
 HOSTNAME=$(cat /proc/sys/kernel/hostname)
 
+dir0=".."
 dir1="."
 
 if [ "$HOSTNAME" != "DESKTOP-JJ95ENL" ]
 then
     echo "Running via host-name $HOSTNAME and this seems to be Production."
-    dir1="/workspaces/microservices-framework/"
+    dir0="/workspaces"
+    dir1="$dir0/microservices-framework"
     NGINX=$(which nginx)
     if [[ -f "$NGINX" ]]
     then
@@ -73,12 +75,12 @@ do_it(){
             rm -R -f $val
         done
         virtualenv --python $python -v $VENV$vers
-        . ./$VENV$vers/bin/activate
+        . $VENV$vers/bin/activate
         pip install --upgrade pip
         pip install -r requirements.txt
     else
         echo "$VENV$vers exists"
-        . ./$VENV$vers/bin/activate
+        . $VENV$vers/bin/activate
         pip install --upgrade pip
         pip --version
     fi
@@ -87,7 +89,7 @@ do_it(){
     vyperlib=$(ls $dir1/python_lib3 | grep "cannot access")
     if [ -z "$vyperlib" ]
     then
-        PYLIB=$(ls -d ../private_vyperlogix_lib3)
+        PYLIB=$(ls -d $dir0/private_vyperlogix_lib3)
         echo "PYLIB=$PYLIB"
         if [ ! -z "$PYLIB" ]
         then
