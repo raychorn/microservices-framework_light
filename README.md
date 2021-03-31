@@ -13,6 +13,7 @@
   - [Usage](#usage)
   - [Deployment](#deployment)
     - [Docker](#docker)
+    - [nginx reverse-proxy](#nginx-reverse-proxy)
     - [Terraform](#terraform)
       - [AWS ECR](#aws-ecr)
       - [AWS ECS](#aws-ecs)
@@ -98,6 +99,18 @@ sudo apt install ca-certificates
 ### Docker
 
 * See the docker directory in this project for hints.
+
+### nginx reverse-proxy
+
+* see also etc/nginx and associated config files.
+
+[how-to-install-nginx-on-ubuntu-20-04](https://phoenixnap.com/kb/how-to-install-nginx-on-ubuntu-20-04)
+
+```
+sudo apt-get update -y
+sudo apt-get install nginx -y
+nginx -v
+```
 
 ### Terraform
 

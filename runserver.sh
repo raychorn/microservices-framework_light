@@ -1,16 +1,65 @@
 #!/usr/bin/env bash
 
-set -a; source .env; set +a
+HOSTNAME=$(cat /proc/sys/kernel/hostname)
+
+dir1="."
+
+if [ "$HOSTNAME" != "DESKTOP-JJ95ENL" ]
+then
+    echo "Running via host-name $HOSTNAME and this seems to be Production."
+    dir1="/workspaces/microservices-framework/"
+    NGINX=$(which nginx)
+    if [[ -f "$NGINX" ]]
+    then
+        echo "$NGINX exists"
+    else
+        echo "NGINX does not exist, so installing it."
+        sudo apt install nginx -y
+        NGINX=$(which nginx)
+        if [[ -f "$NGINX" ]]
+        then
+            echo "$NGINX exists"
+        else
+            echo "NGINX does not exist, so cannot continue."
+            exit
+        fi
+    fi
+    NGINX_REVERSE_PROXY="/etc/nginx/sites-available/reverse-proxy.conf"
+    if [[ -f "$NGINX_REVERSE_PROXY" ]]
+    then
+        echo "$NGINX_REVERSE_PROXY exists"
+    else
+        echo "NGINX_REVERSE_PROXY does not exist, so putting it in-place."
+        NGINX_REVERSE_PROXY_SRC="$dir1/etc/nginx/sites-available/reverse-proxy.conf"
+        if [[ -f "$NGINX_REVERSE_PROXY_SRC" ]]
+        then
+            echo "$NGINX_REVERSE_PROXY_SRC exists"
+            cp $NGINX_REVERSE_PROXY_SRC $NGINX_REVERSE_PROXY
+        else
+            echo "NGINX_REVERSE_PROXY_SRC does not exist, so cannot continue."
+            exit
+        fi
+    fi
+    SYMBOLIC_LINK=$(ls -la /etc/nginx/sites-enabled | grep reverse-proxy.conf)
+    if [ -z "$SYMBOLIC_LINK" ]
+    then
+        sudo systemctl stop nginx
+        sudo unlink /etc/nginx/sites-enabled/default
+        sudo ln -s /etc/nginx/sites-available/reverse-proxy.conf /etc/nginx/sites-enabled/default
+        sudo systemctl start nginx
+    fi
+fi
+
+set -a; source $dir1/.env; set +a
 
 do_it(){
     REQS=requirements.txt
 
-    dir1="."
     VENV=$dir1/.venv
 
     cd $dir1
 
-    python=/usr/bin/python3.9
+    python=$(which python3.9)
     vers=$($python -c 'import sys; i=sys.version_info; print("{}{}{}".format(i.major,i.minor,i.micro))')
     VENVvers=$(ls $VENV$vers)
     echo "VENV$vers=$VENV$vers"
