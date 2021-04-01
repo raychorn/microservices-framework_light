@@ -11,6 +11,7 @@
     - [Installing](#installing)
       - [Main .env](#main-env)
         - [__LITERALS__](#literals)
+        - [Sample .env file](#sample-env-file)
       - [Docker .env](#docker-env)
   - [Usage](#usage)
   - [Deployment](#deployment)
@@ -73,6 +74,58 @@ Literals are defined using Python Syntax as follows:
 
 ```
 __LITERALS__="['MONGO_INITDB_ROOT_PASSWORD']"
+```
+
+##### Sample .env file
+
+```
+plugins=/home/raychorn/projects/python-projects/private_microservice_plugins1
+
+__uuid__=your-uuid-goes-here-matches-uuid-in-your-modules
+
+__LITERALS__="['MONGO_INITDB_ROOT_PASSWORD']"
+__EVALS__="use_flask|use_fastapi|use_django"
+use_flask=False
+use_fastapi=True
+use_django=False
+
+host=0.0.0.0
+port=9999
+VYPERAPI_URL=$host:$port
+
+LOGGER_NAME=vyperapi
+
+MONGO_INITDB_DATABASE=admin
+MONGO_HOST=your-ip-address-or-dns-name
+MONGO_PORT=27017
+MONGO_URI=mongodb://$MONGO_HOST:$MONGO_PORT/?connectTimeoutMS=300000
+MONGO_INITDB_ROOT_USERNAME=root
+MONGO_INITDB_ROOT_PASSWORD=your-mongodb-password-goes-here
+MONGO_AUTH_MECHANISM=SCRAM-SHA-256
+
+MONGO_OVERRIDE=True
+
+debug=1
+
+libs=./libs
+vyperlogix_lib3=/home/raychorn/projects/python-projects/private_vyperlogix_lib3
+
+gunicorn_backlog=2048
+gunicorn_workers=3
+gunicorn_threads=3
+gunicorn_worker_class=sync # https://docs.gunicorn.org/en/latest/settings.html#worker-class
+gunicorn_worker_connections=1000
+gunicorn_timeout=180
+gunicorn_keepalive=10
+gunicorn_graceful_timeout=30
+gunicorn_pidfile=./gunicorn/gunicorn.pid
+gunicorn_daemon=False
+gunicorn_errorlog=./gunicorn/error.log
+gunicorn_loglevel=info
+gunicorn_accesslog=./gunicorn/access.log
+gunicorn_proc_name=vyperapi
+
+NUM_URL_PARMS=250 # do not exceed 250
 ```
 
 #### Docker .env
