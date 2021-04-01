@@ -20,8 +20,12 @@ def get_environ_keys(*args, **kwargs):
     assert (k is not None) and (v is not None), 'Problem with kwargs -> {}, k={}, v={}'.format(kwargs,k,v)
     __logger__ = kwargs.get('logger')
     if (k == '__LITERALS__'):
-        for item in v:
-            env_literals.append(item)
+        _v = eval(v)
+        if (isinstance(_v, list)):
+            for item in _v:
+                env_literals.append(item)
+        else:
+            env_literals.append(_v)
     if (isinstance(v, str)):
         v = expandvars(v) if (k not in env_literals) else v
         v = __escape(v) if (k in __env__.get('__ESCAPED__', [])) else eval(v) if (k in __env__.get('__EVALS__', [])) else v

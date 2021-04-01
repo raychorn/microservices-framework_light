@@ -9,6 +9,8 @@
   - [Getting Started](#getting-started)
     - [Prerequisites](#prerequisites)
     - [Installing](#installing)
+      - [Main .env](#main-env)
+        - [__LITERALS__](#literals)
       - [Docker .env](#docker-env)
   - [Usage](#usage)
   - [Deployment](#deployment)
@@ -60,6 +62,18 @@ pip install -r requirements.txt
 YOU are on your own but I believe if you and you can do this.
 
 I can provide support when you provide a Sponsorship via the link.
+
+#### Main .env
+
+[ToC](#table-of-contents)
+
+##### __LITERALS__
+
+Literals are defined using Python Syntax as follows:
+
+```
+__LITERALS__="['MONGO_INITDB_ROOT_PASSWORD']"
+```
 
 #### Docker .env
 
