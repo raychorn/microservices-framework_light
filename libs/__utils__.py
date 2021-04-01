@@ -5,6 +5,7 @@ import logging
 from datetime import datetime
 
 from logging.handlers import RotatingFileHandler
+from os.path import dirname
 
 is_really_something = lambda s,t:s and t(s)
 something_greater_than_zero = lambda s:(s > 0)
@@ -31,7 +32,7 @@ def setup_rotating_file_handler(logname, logfile, max_bytes, backup_count):
 production_token = 'production'
 
 def get_logger():
-    base_filename = os.path.splitext(os.path.basename(__file__))[0]
+    base_filename = os.path.splitext(os.environ.get('LOGGER_NAME', os.path.dirname(os.path.dirname(__file__)).split(os.sep)[-1]))[0]
 
     log_filename = '{}{}{}{}{}{}{}_{}.log'.format('logs', os.sep, base_filename, os.sep, production_token, os.sep, base_filename, default_timestamp(datetime.utcnow()))
 
