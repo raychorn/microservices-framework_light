@@ -52,7 +52,10 @@ then
     fi
 fi
 
-set -a; source $dir1/.env; set +a
+if [ -f $dir1/.env ]
+then
+    export $(cat $dir1/.env | sed 's/#.*//g' | xargs)
+fi
 
 do_it(){
     REQS=requirements.txt
