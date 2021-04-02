@@ -2,15 +2,23 @@
 
 ## Table of Contents
 
-- [About](#about)
-- [Getting Started](#getting_started)
-- [Usage](#usage)
+- [Auto-ECR for Bash](#auto-ecr-for-bash)
+  - [Table of Contents](#table-of-contents)
+  - [About](#about)
+  - [Getting Started](#getting-started)
+    - [Prerequisites](#prerequisites)
+  - [Installing](#installing)
+  - [Usage](#usage)
+    - [--help](#--help)
+    - [--verbose](#--verbose)
+    - [--clean-ecr](#--clean-ecr)
 
-## About <a name = "about"></a>
+
+## About
 
 Automates the Docker Push for AWS ECR via git bash for Windows 10. This assumes your paths are setup correctly.
 
-## Getting Started <a name = "getting_started"></a>
+## Getting Started
 
 Not gonna work in Windows via "git bash"
 
@@ -28,7 +36,7 @@ Add the connected user "$USER" to the docker group. Change the user name to matc
 
 Either do a "newgrp docker" or log out/in to activate the changes to groups.
 
-### Installing
+## Installing
 
 1. Edit the ./.aws/credentials file.
 
@@ -67,14 +75,22 @@ sudo ./ecr-push-all.sh
 5. Push your Images into ECR by issuing the following command:
 
 ```
-./ecr-push-all.sh
+./ecr-push-all.sh [--help] [--verbose] [--push-ecr] [--clean-ecr]
 ```
 
-## Usage <a name = "usage"></a>
+## Usage
 
-### Command Line options
+### --help
 
-#### --clean-ecr
+```
+Display help information about command line options.
+```
+### --verbose
+
+```
+Display verbose information to help diagose issues.
+```
+### --clean-ecr
 
 ```
 removes all known repos from the ECR - this is for development purposes only.

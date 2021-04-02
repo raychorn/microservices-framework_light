@@ -10,14 +10,39 @@ echo "$# arguments "
 
 if [[ "$1." == "--help." ]]
 then
-	echo "--verbose to make the output verbose for debugging purposes."
+	echo "--verbose to make the output verbose for debugging purposes, if used this option must appear first."
+	echo "--push-ecr to pushes all the Docker Images into ECR."
+	echo "--clean-ecr to removes all repos from ECR."
 	exit
 fi
 
 LOCAL_BIN=~/.local/bin
 DIR0="$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
 pDIR0=$(dirname "$DIR0")
-REQS=$pDIR0/requirements.txt
+
+REQS=$DIR0/requirements.txt
+
+if [[ -f $REQS ]]
+then
+	if [[ "$1." == "--verbose." ]]
+	then
+		echo "REQS found in $REQS"
+	fi
+else
+	REQS=$pDIR0/requirements.txt
+fi
+
+GETPIP=$DIR0/get-pip.py
+
+if [[ -f $GETPIP ]]
+then
+	if [[ "$1." == "--verbose." ]]
+	then
+		echo "GETPIP found in $GETPIP"
+	fi
+else
+	GETPIP=$pDIR0/get-pip.py
+fi
 
 if [[ "$1." == "--verbose." ]]
 then
@@ -116,7 +141,7 @@ else
 			then
 				echo "Installing pip3 locally."
 			fi
-			$py39 $pDIR0/get-pip.py
+			$py39 $GETPIP
 		fi
 		pypip3=$(which pip3)
 		if [[ "$1." == "--verbose." ]]
@@ -193,4 +218,4 @@ then
 	exit
 fi
 
-$py39 $DIR0/auto_ecr.py --push-ecr
+$py39 $DIR0/auto_ecr.py $1 $2 $3 $4 $5 $6 $7 $8 $9
