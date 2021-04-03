@@ -11,6 +11,8 @@ from logging.handlers import RotatingFileHandler
 
 from concurrent import futures
 
+import boto3
+
 import mujson as json
 
 __aws_creds_dest__ = os.path.expanduser('~/.aws/credentials')
@@ -281,6 +283,69 @@ def handle_stdin(stdin, callback=None, verbose=False, callback2=None, is_json=Fa
 __clean_ecr_command_line_option__ = '--clean-ecr'
 __push_ecr_command_line_option__ = '--push-ecr'
 
+
+def find_aws_creds_src(fpath):
+    __root = os.path.dirname(__file__)
+    __fpath = fpath.split(os.sep)
+    if (__fpath[0] == '.'):
+        __fpath = __fpath[1:]
+    __fpath = os.sep.join(__fpath)
+    while (len(__root.split(os.sep)) > 1):
+        __r__ = os.sep.join([__root, __fpath])
+        if (os.path.exists(__r__) and os.path.isfile(__r__)):
+            return __r__
+        __root = os.path.dirname(__root)
+    return fpath
+
+
+def get_something_from_something(l, regex=None, name=None):
+    assert regex, 'Missing the regex.'
+    matches = re.match(regex, l, re.MULTILINE)
+    if (matches):
+        if (name):
+            return matches.groupdict().get(name)
+        else:
+            def __func__(k):
+                return [ch for ch in k if (ch.isnumeric())]
+            return tuple([matches.groupdict().get(k) for k in sorted([k for k in matches.groupdict().keys()], key=__func__)])
+    return None
+
+aws_creds = {}
+def cat_aws_creds(fpath, dest=None):
+    __d__ = aws_creds
+    __s__ = []
+    resp = False
+    if (os.path.exists(fpath)):
+        try:
+            if (dest and not os.path.exists(dest)):
+                os.mkdir(os.path.dirname(dest))
+                Path(dest).touch()
+                
+            fOut = open(dest, 'w') if (dest is not None) else None
+            with open(fpath, 'r') as fIn:
+                for l in fIn:
+                    l = l.strip()
+                    if (len(l) > 0):
+                        n = get_something_from_something(l, regex=r"^\[(?P<name>.*)\]$", name='name')
+                        if (n):
+                            if (len(__s__) > 0):
+                                __d__ = __s__.pop()
+                            __d__[n] = {}
+                            __s__.append(__d__)
+                            __d__ = __d__.get(n)
+                        else:
+                            k,v = get_something_from_something(l, regex=r"^(?P<name1>.*)\=(?P<value2>.*)$")
+                            __d__[k] = v
+            resp = True
+        except:
+            resp = False
+        finally:
+            if (fOut):
+                fOut.flush()
+                fOut.close()
+    return resp
+
+
 if (__name__ == '__main__'):
     '''
     --clean-ecr ... removes all known repos from the ECR - this is for development purposes only.
@@ -293,12 +358,17 @@ if (__name__ == '__main__'):
     if (is_pushing_ecr):
         logger.info('{}'.format(__push_ecr_command_line_option__))
     
+    __aws_creds_src__ = find_aws_creds_src(__aws_creds_src__)
+    
     logger.info('Checking for aws creds.')
-    result = subprocess.run(__cat_aws_creds__, stdout=subprocess.PIPE)
-    resp = handle_stdin(result.stdout, callback2=handle_cat_aws_creds, verbose=True)
-    if (resp != True):
-        os.mkdir(os.path.dirname(__aws_creds_dest__))
-        Path(__aws_creds_dest__).touch()
+    if (0):
+        result = subprocess.run(__cat_aws_creds__, stdout=subprocess.PIPE)
+        resp = handle_stdin(result.stdout, callback2=handle_cat_aws_creds, verbose=True)
+        if (resp != True):
+            os.mkdir(os.path.dirname(__aws_creds_dest__))
+            Path(__aws_creds_dest__).touch()
+    else:
+        resp = cat_aws_creds(__aws_creds_src__, dest=__aws_creds_dest__)
 
     logger.info('Checking for aws config.')
     result = subprocess.run(__cat_aws_config__, stdout=subprocess.PIPE)
@@ -308,28 +378,30 @@ if (__name__ == '__main__'):
         Path(__aws_config_dest__).touch()
 
     if (0):
-        logger.info('Using the aws creds.')
-        result = subprocess.run(__aws_cli_login__, stdout=subprocess.PIPE)
-        resp = handle_stdin(result.stdout, callback2=handle_aws_login, verbose=False)
-        assert resp == True, 'Cannot login using the aws creds.  Please resolve.'
-
-    logger.info('Checking for aws cli version 2.')
-    resp = None
-    while (1):
-        try:
-            result = subprocess.run(__aws_version__, stdout=subprocess.PIPE)
-            resp = handle_stdin(result.stdout, callback2=handle_aws_version, verbose=False)
-            break
-        except Exception as ex:
-            exc_info = sys.exc_info()
-            traceback.print_exception(*exc_info)
-            del exc_info
-            
-            install_aws_cli()
-        finally:
-            if (not resp):
-                logger.info('Warning: Cannot resolve aws cli issues automatically. Please run the script manually. See the "script" directory.')
+        logger.info('Checking for aws cli version 2.')
+        resp = None
+        while (1):
+            try:
+                result = subprocess.run(__aws_version__, stdout=subprocess.PIPE)
+                resp = handle_stdin(result.stdout, callback2=handle_aws_version, verbose=False)
                 break
+            except Exception as ex:
+                exc_info = sys.exc_info()
+                traceback.print_exception(*exc_info)
+                del exc_info
+                
+                install_aws_cli()
+            finally:
+                if (not resp):
+                    logger.info('Warning: Cannot resolve aws cli issues automatically. Please run the script manually. See the "script" directory.')
+                    break
+    else:
+        client = boto3.client(
+            'ecr',
+            aws_access_key_id=process.env.ACCESS_KEY,
+            aws_secret_access_key=process.env.SECRET_KEY,
+            aws_session_token=process.env.SESSION_TOKEN,
+        )        
 
     if (not is_cleaning_ecr):
         resp = None
