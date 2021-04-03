@@ -1,8 +1,8 @@
-# Auto-ECR for Bash
+# Automated ECR for AWS Projects
 
 ## Table of Contents
 
-- [Auto-ECR for Bash](#auto-ecr-for-bash)
+- [Automated ECR for AWS Projects](#automated-ecr-for-aws-projects)
   - [Table of Contents](#table-of-contents)
   - [About](#about)
   - [Getting Started](#getting-started)
