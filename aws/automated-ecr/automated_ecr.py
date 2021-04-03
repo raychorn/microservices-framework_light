@@ -21,15 +21,9 @@ __aws_creds_src__ = './.aws/credentials'
 __aws_config_dest__ = os.path.expanduser('~/.aws/config')
 __aws_config_src__ = './.aws/config'
 
-__cat_aws_creds__ = ['cat', __aws_creds_dest__]
-__cat_aws_config__ = ['cat', __aws_config_dest__]
-
-__aws_version__ = ['aws', '--version']
 __docker_images__ = ['docker', 'images', '--format', '{{.Repository}}:{{.Tag}}={{.ID}}']
 
 __docker_containers__ = ['docker', 'ps', '-a', '--format', '{{.Image}}={{.ID}}']
-
-__aws_cli_installer__ = ['./scripts/aws-cli-installer.sh']
 
 __resolve_docker_issues__ = ['./scripts/resolve-docker-issues.sh']
 
@@ -42,13 +36,9 @@ __aws_cli_ecr_describe_repos__ = ['aws', 'ecr', 'describe-repositories']
 
 __aws_cli_ecr_create_repo__ = ['aws', 'ecr', 'create-repository', '--repository-name', '{}', '--image-scanning-configuration', 'scanOnPush=true']
 
-__aws_cmd_ecr_delete_repo__ = 'aws ecr delete-repository --repository-name {} --force'
-
 __docker_tag_cmd__ = 'docker tag {} {}:{}'
 
 __docker_push_cmd__ = 'docker push {}:{}'
-
-__docker_remove_container_by_id__ = 'docker container rm {}'
 
 __aws_docker_login__cmd__ = 'aws ecr get-login-password --region us-east-2 | docker login --username AWS --password-stdin {}'
 
@@ -152,17 +142,6 @@ def handle_docker_hello(item):
     return True
 
 
-def handle_aws_cli_installer(item):
-    logger.info('DEBUG:  handle_aws_cli_installer --> {}'.format(item))
-    return True
-
-
-def install_aws_cli():
-    logger.info('Installing aws cli.')
-    result = subprocess.run(__aws_cli_installer__, stdout=subprocess.PIPE)
-    handle_stdin(result.stdout, callback2=handle_aws_cli_installer, verbose=True)
-
-
 def resolve_docker_issues():
     logger.info('Resolving docker issues.')
     result = subprocess.run(__resolve_docker_issues__, stdout=subprocess.PIPE)
@@ -175,20 +154,6 @@ def handle_aws_docker_login(item):
     return True
 
 
-def handle_aws_version(item):
-    __vector__ = response_vectors.get(__aws_cli__, None)
-    if (__vector__ is None):
-        try:
-            __is__ = item.find(__aws_cli__)
-            if (__is__ == -1):
-                return False
-            assert (__is__ > -1), 'Missing {}'.format(__aws_cli__)
-            logger.info('{}'.format(item))
-            response_vectors[__aws_cli__] = __is__
-        except:
-            return False
-    return True
-
 def resolve_missing_file_dest(src_name, dest_name):
     if (dest_name.find('~') > -1):
         dest_name = os.path.expanduser(dest_name)
@@ -199,15 +164,6 @@ def resolve_missing_file_dest(src_name, dest_name):
         Path(dest_name).touch()
         shutil.copyfile(src_name, dest_name)
         assert os.path.exists(dest_name) and os.path.isfile(dest_name), 'Missing {}. Please resolve by ensuring {} is available.'.format(dest_name, src_name)
-
-def handle_cat_aws_creds(item):
-    resolve_missing_file_dest(__aws_creds_src__, __aws_creds_dest__)
-    return os.path.exists(os.path.expanduser(__aws_creds_dest__)) and os.path.isfile(os.path.expanduser(__aws_creds_dest__))
-
-def handle_cat_aws_config(item):
-    resolve_missing_file_dest(__aws_config_src__, __aws_config_dest__)
-    return os.path.exists(os.path.expanduser(__aws_config_dest__)) and os.path.isfile(os.path.expanduser(__aws_config_dest__))
-
 
 
 def handle_aws_login(item):
@@ -282,9 +238,11 @@ def handle_stdin(stdin, callback=None, verbose=False, callback2=None, is_json=Fa
 
 __clean_ecr_command_line_option__ = '--clean-ecr'
 __push_ecr_command_line_option__ = '--push-ecr'
+__verbose_command_line_option__ = '--verbose'
+__single_command_line_option__ = '--single'
 
 
-def find_aws_creds_src(fpath):
+def find_aws_creds_or_config_src(fpath):
     __root = os.path.dirname(__file__)
     __fpath = fpath.split(os.sep)
     if (__fpath[0] == '.'):
@@ -303,16 +261,18 @@ def get_something_from_something(l, regex=None, name=None):
     matches = re.match(regex, l, re.MULTILINE)
     if (matches):
         if (name):
-            return matches.groupdict().get(name)
+            return matches.groupdict().get(name).strip()
         else:
             def __func__(k):
                 return [ch for ch in k if (ch.isnumeric())]
-            return tuple([matches.groupdict().get(k) for k in sorted([k for k in matches.groupdict().keys()], key=__func__)])
+            return tuple([matches.groupdict().get(k).strip() for k in sorted([k for k in matches.groupdict().keys()], key=__func__)])
     return None
 
 aws_creds = {}
-def cat_aws_creds(fpath, dest=None):
-    __d__ = aws_creds
+aws_config = {}
+def handle_aws_creds_or_config(fpath, dest=None, target=None):
+    assert isinstance(target, dict), 'target must be a dict object.'
+    __d__ = target
     __s__ = []
     resp = False
     if (os.path.exists(fpath)):
@@ -350,6 +310,14 @@ if (__name__ == '__main__'):
     '''
     --clean-ecr ... removes all known repos from the ECR - this is for development purposes only.
     '''
+    is_verbose = any([str(arg).find(__verbose_command_line_option__) > -1 for arg in sys.argv])
+    if (is_verbose):
+        logger.info('verbose: {}'.format(__verbose_command_line_option__))
+    
+    is_single = any([str(arg).find(__single_command_line_option__) > -1 for arg in sys.argv])
+    if (is_single):
+        logger.info('{}'.format(__single_command_line_option__))
+    
     is_cleaning_ecr = any([str(arg).find(__clean_ecr_command_line_option__) > -1 for arg in sys.argv])
     if (is_cleaning_ecr):
         logger.info('{}'.format(__clean_ecr_command_line_option__))
@@ -357,119 +325,87 @@ if (__name__ == '__main__'):
     is_pushing_ecr = any([str(arg).find(__push_ecr_command_line_option__) > -1 for arg in sys.argv])
     if (is_pushing_ecr):
         logger.info('{}'.format(__push_ecr_command_line_option__))
+
+    is_dry_run = (not is_cleaning_ecr) and (not is_pushing_ecr)
+    if (is_dry_run):
+        logger.info('No command line options given. Performing a dry-run with no actions taken.')
     
-    __aws_creds_src__ = find_aws_creds_src(__aws_creds_src__)
+    __aws_creds_src__ = find_aws_creds_or_config_src(__aws_creds_src__)
+    __aws_config_src__ = find_aws_creds_or_config_src(__aws_config_src__)
     
     logger.info('Checking for aws creds.')
-    if (0):
-        result = subprocess.run(__cat_aws_creds__, stdout=subprocess.PIPE)
-        resp = handle_stdin(result.stdout, callback2=handle_cat_aws_creds, verbose=True)
-        if (resp != True):
-            os.mkdir(os.path.dirname(__aws_creds_dest__))
-            Path(__aws_creds_dest__).touch()
-    else:
-        resp = cat_aws_creds(__aws_creds_src__, dest=__aws_creds_dest__)
+    resp = handle_aws_creds_or_config(__aws_creds_src__, dest=__aws_creds_dest__, target=aws_creds)
 
     logger.info('Checking for aws config.')
-    result = subprocess.run(__cat_aws_config__, stdout=subprocess.PIPE)
-    resp = handle_stdin(result.stdout, callback2=handle_cat_aws_config, verbose=True)
-    if (resp != True):
-        os.mkdir(os.path.dirname(__aws_config_dest__))
-        Path(__aws_config_dest__).touch()
+    resp = handle_aws_creds_or_config(__aws_config_src__, dest=__aws_config_dest__, target=aws_config)
 
-    if (0):
-        logger.info('Checking for aws cli version 2.')
-        resp = None
-        while (1):
-            try:
-                result = subprocess.run(__aws_version__, stdout=subprocess.PIPE)
-                resp = handle_stdin(result.stdout, callback2=handle_aws_version, verbose=False)
-                break
-            except Exception as ex:
-                exc_info = sys.exc_info()
-                traceback.print_exception(*exc_info)
-                del exc_info
-                
-                install_aws_cli()
-            finally:
-                if (not resp):
-                    logger.info('Warning: Cannot resolve aws cli issues automatically. Please run the script manually. See the "script" directory.')
-                    break
-    else:
-        client = boto3.client(
-            'ecr',
-            aws_access_key_id=process.env.ACCESS_KEY,
-            aws_secret_access_key=process.env.SECRET_KEY,
-            aws_session_token=process.env.SESSION_TOKEN,
-        )        
+    ecr_client = boto3.client(
+        'ecr',
+        aws_access_key_id=aws_creds.get(list(aws_creds.keys())[0], {}).get('aws_access_key_id'),
+        aws_secret_access_key=aws_creds.get(list(aws_creds.keys())[0], {}).get('aws_secret_access_key'),
+        region_name=aws_config.get(list(aws_config.keys())[0], {}).get('region')
+    )        
 
-    if (not is_cleaning_ecr):
-        resp = None
-        while (1):
-            try:
-                logger.info('Checking for docker.')
-                result = subprocess.run(__docker_hello_world__, stdout=subprocess.PIPE)
-                resp = handle_stdin(result.stdout, callback2=handle_docker_hello, verbose=False)
-                break
-            except Exception as ex:
-                exc_info = sys.exc_info()
-                traceback.print_exception(*exc_info)
-                del exc_info
-                
-                resolve_docker_issues()
-            finally:
-                if (not resp):
-                    logger.info('Warning: Cannot resolve docker issues automatically. Please run the script manually. See the "script" directory.')
-                    break
-
-        result = subprocess.run(__docker_containers__, stdout=subprocess.PIPE)
-        resp = handle_stdin(result.stdout, callback=parse_docker_ps, callback2=handle_docker_ps_item, verbose=False)
+    is_pushing_ecr = True if (is_dry_run) else is_pushing_ecr
+    if (is_pushing_ecr):
+        import docker
+        docker_client = docker.from_env()
         
-        dead_containers = name_to_id.get(__docker_hello_world__[-1], [])
+        logger.info('{}'.format(' '.join(__docker_containers__)))
+        containers = docker_client.containers.list(all=True)
+        
+        __containers_by_id__ = {}
+        for container in containers:
+            cname = container.image.tags[0]
+            name_to_id[cname] = container.short_id
+            id_to_name[container.short_id] = cname
+            __containers_by_id__[container.short_id] = container
+        
+        dead_containers = [name_to_id.get(n)[0] for n in name_to_id.keys() if (n.find(__docker_hello_world__[-1]) > -1)]
         if (len(dead_containers) > 0):
             for _id in dead_containers:
-                result = subprocess.run(__docker_remove_container_by_id__.format(_id).split(), stdout=subprocess.PIPE)
-                resp = handle_stdin(result.stdout, callback=None, callback2=None, verbose=False)
-                assert resp == _id, 'Something went wrong when trying to remove container #{}.'.format(_id)
-                logger.info(resp)
+                container = __containers_by_id__.get(_id)
+                if (container):
+                    container.remove(force=True)
 
         name_to_id = SmartDict()
         id_to_name = {}
 
-        result = subprocess.run(__docker_images__, stdout=subprocess.PIPE)
-        resp = handle_stdin(result.stdout, callback=parse_docker_image_ls, callback2=handle_docker_item, verbose=False)
-        if (0):
-            logger.info(len(id_to_name))
-            with open(__docker_pulls__, 'w') as fOut:
-                logger.info('#!/usr/bin/env bash\n', file=fOut)
-                for k,v in id_to_name.items():
-                    logger.info('{} -> {}'.format(k,v))
-                    logger.info('docker pull {}'.format(v), file=fOut)
-                    
+        logger.info('{}'.format(' '.join(__docker_images__)))
+        images = docker_client.images.list(all=True)
+
+        __images_by_id__ = {}
+        for image in images:
+            iname = image.tags[0]
+            name_to_id[iname] = image.short_id
+            id_to_name[image.short_id] = iname
+            __images_by_id__[image.short_id] = image
+
         assert len(id_to_name) > 0, 'There are no docker images to handle.  Please resolve.'
         logger.info('There are {} docker images.'.format(len(id_to_name)))
     
-    logger.info('{}'.format(__aws_cli_ecr_describe_repos__))
-    result = subprocess.run(__aws_cli_ecr_describe_repos__, stdout=subprocess.PIPE)
-    resp = handle_stdin(result.stdout, callback2=None, verbose=False, is_json=True)
-    assert 'repositories' in resp.keys(), 'Cannot "{}".  Please resolve.'.format(__aws_cli_ecr_describe_repos__)
-    the_repositories = resp.get('repositories', [])
+    logger.info('{}'.format(' '.join(__aws_cli_ecr_describe_repos__)))
+    response = ecr_client.describe_repositories()    
+    assert 'repositories' in response.keys(), 'Cannot "{}".  Please resolve.'.format(__aws_cli_ecr_describe_repos__)
+    the_repositories = response.get('repositories', [])
     
-    if (is_cleaning_ecr): # this is only for development.
+    if (is_cleaning_ecr): 
         if (len(the_repositories)):
             for repo in the_repositories:
                 repo_name = repo.get('repositoryName')
                 assert repo_name is not None, 'Cannot remove {} due to the lack of information. Please resolve.'.format(json.dumps(repo, indet=3))
                 logger.info('Removing the repo named "{}".'.format(repo_name))
-                cmd = __aws_cmd_ecr_delete_repo__.format(repo_name)
-                result = subprocess.run(cmd.split(), stdout=subprocess.PIPE)
-                resp = handle_stdin(result.stdout, callback2=None, verbose=False, is_json=True)
+                response = ecr_client.delete_repository(
+                    registryId=repo.get('registryId'),
+                    repositoryName=repo.get('repositoryName'),
+                    force=True
+                )                    
                 assert 'repository' in resp.keys(), 'Cannot "{}".  Please resolve.'.format(cmd)
             logger.info('Done.')
         else:
             logger.info('Nothing to do.')
     
-    if (not is_cleaning_ecr):
+    if (is_pushing_ecr):
         create_the_repos = []
         for image_id,image_name in id_to_name.items():
             __is__ = False
@@ -482,7 +418,7 @@ if (__name__ == '__main__'):
                 if (not __is__):
                     create_the_repos.append({'name':possible_repo_name.split('/')[-1], 'tag': image_name.split(':')[-1], 'id': image_id})
                     
-        print(json.dumps({'create_the_repos': create_the_repos}, indent=3))
+        #print(json.dumps({'create_the_repos': create_the_repos}, indent=3))
         
         def task(vector={}):
             issues_count = 0
@@ -526,23 +462,34 @@ if (__name__ == '__main__'):
             vector['result'] = True if (issues_count == 0) else False
             return vector
             
-        __max_workers = len(create_the_repos)+1
-        executor = futures.ProcessPoolExecutor(max_workers=__max_workers)
+        is_single = True if (is_dry_run) else is_single
+        if (not is_single):
+            __max_workers = len(create_the_repos)+1
+            executor = futures.ProcessPoolExecutor(max_workers=__max_workers)
 
-        wait_for = []
-        count_started = 0
-        for vector in create_the_repos:
-            wait_for.append(executor.submit(task, vector))
-            count_started += 1
-                
-        count_completed = 0
-        logger.info('BEGIN: Waiting for tasks to complete.')
-        for f in futures.as_completed(wait_for):
-            count_completed += 1
-            logger.info('main-thread: result: {}'.format(f.result()))
-            logger.info('main-thread: Progress: {} of {} or {:.2%} completed'.format(count_completed, count_started, (count_completed / count_started)))
-        logger.info('DONE!!! Waiting for tasks to complete.')
-    
+            wait_for = []
+            count_started = 0
+            for vector in create_the_repos:
+                wait_for.append(executor.submit(task, vector))
+                count_started += 1
+                    
+            count_completed = 0
+            logger.info('BEGIN: Waiting for tasks to complete.')
+            for f in futures.as_completed(wait_for):
+                count_completed += 1
+                logger.info('main-thread: result: {}'.format(f.result()))
+                logger.info('main-thread: Progress: {} of {} or {:.2%} completed'.format(count_completed, count_started, (count_completed / count_started)))
+            logger.info('DONE!!! Waiting for tasks to complete.')
+        else:
+            count_started = len(create_the_repos)
+            count_completed = 0
+            for vector in create_the_repos:
+                result = task(vector=vector)
+                count_completed += 1
+                logger.info('main-thread: result: {}'.format(result))
+                logger.info('main-thread: Progress: {} of {} or {:.2%} completed'.format(count_completed, count_started, (count_completed / count_started)))
+            logger.info('DONE!!!')
+        
     if (0):
         logger.info('{}'.format(__docker_system_prune__))
         result = subprocess.run(__docker_system_prune__, stdout=subprocess.PIPE)
