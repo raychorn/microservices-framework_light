@@ -218,4 +218,4 @@ then
 	exit
 fi
 
-$py39 $DIR0/auto_ecr.py $1 $2 $3 $4 $5 $6 $7 $8 $9
+$py39 $DIR0/automated_ecr.py $1 $2 $3 $4 $5 $6 $7 $8 $9
