@@ -47,6 +47,8 @@ __aws_docker_login__cmd__ = 'aws ecr get-login-password --region us-east-2 | doc
 
 __docker_system_prune__ = ['yes | docker system prune -a']
 
+__ignoring_images_like_these__ = ['.amazonaws.com']
+
 __aws_cli__ = 'aws-cli/2.'
 __hello_from_docker__ = 'Hello from Docker!'
 __no_such_file_or_directory__ = 'No such file or directory'
@@ -285,9 +287,10 @@ if (__name__ == '__main__'):
         for image in images:
             if (len(image.tags) > 0):
                 iname = image.tags[0]
-                name_to_id[iname] = image.short_id
-                id_to_name[image.short_id] = iname
-                __images_by_id__[image.short_id] = image
+                if (not any([iname.find(i) > -1 for i in __ignoring_images_like_these__])):
+                    name_to_id[iname] = image.short_id
+                    id_to_name[image.short_id] = iname
+                    __images_by_id__[image.short_id] = image
 
         assert len(id_to_name) > 0, 'There are no docker images to handle.  Please resolve.'
         logger.info('There are {} docker images.'.format(len(id_to_name)))
