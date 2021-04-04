@@ -12,6 +12,7 @@ from logging.handlers import RotatingFileHandler
 from concurrent import futures
 
 import boto3
+import base64
 
 import mujson as json
 
@@ -56,10 +57,10 @@ __expected_aws_docker_login__ = 'Login Succeeded'
 production_token = 'production'
 development_token = 'development'
 
-is_really_something = lambda s,t:s and t(s)
+is_really_something = lambda s,t:(s is not None) and t(s)
 something_greater_than_zero = lambda s:(s > 0)
 default_timestamp = lambda t:t.isoformat().replace(':', '').replace('-','').split('.')[0]
-is_running_production = lambda : (socket.gethostname() != 'DESKTOP-8H4F8R5')
+is_running_production = lambda : (socket.gethostname() != 'DESKTOP-JJ95ENL')
 
 def get_stream_handler(streamformat="%(asctime)s:%(levelname)s -> %(message)s"):
     stream = logging.StreamHandler()
@@ -125,121 +126,11 @@ ignoring_image_names = [__docker_hello_world__[-1]]
 
 has_been_tagged = lambda name:str(name).find('.amazonaws.com/') > -1
 
-def handle_resolve_docker_issues(item):
-    logger.info('DEBUG:  handle_resolve_docker_issues --> {}'.format(item))
-    return True
-
-
-def handle_docker_hello(item):
-    try:
-        __is__ = item.find(__hello_from_docker__)
-        if (__is__ == -1):
-            return False
-        assert (__is__ > -1), 'Missing {}'.format(__hello_from_docker__)
-        logger.info('{}'.format(item))
-    except:
-        return False
-    return True
-
-
-def resolve_docker_issues():
-    logger.info('Resolving docker issues.')
-    result = subprocess.run(__resolve_docker_issues__, stdout=subprocess.PIPE)
-    handle_stdin(result.stdout, callback2=handle_resolve_docker_issues, verbose=True)
-
-
-
-def handle_aws_docker_login(item):
-    logger.info('DEBUG:  handle_aws_docker_login --> {}'.format(item))
-    return True
-
-
-def resolve_missing_file_dest(src_name, dest_name):
-    if (dest_name.find('~') > -1):
-        dest_name = os.path.expanduser(dest_name)
-    if (src_name.find('~') > -1):
-        src_name = os.path.expanduser(src_name)
-    if (not os.path.exists(dest_name)):
-        assert os.path.exists(src_name) and os.path.isfile(src_name), 'Missing {}. Please resolve.'.format(src_name)
-        Path(dest_name).touch()
-        shutil.copyfile(src_name, dest_name)
-        assert os.path.exists(dest_name) and os.path.isfile(dest_name), 'Missing {}. Please resolve by ensuring {} is available.'.format(dest_name, src_name)
-
-
-def handle_aws_login(item):
-    return None
-
-
-def handle_ecr_describe_repos(item):
-    return None
-
-
-def parse_docker_image_ls(line):
-    return line.replace("b'", "").split('=')
-
-
-def parse_docker_ps(line):
-    return line.replace("b'", "").split('=')
-
-
-def handle_docker_item(item):
-    if (all([len(t.strip()) > 1 for t in item])):
-        name_to_id[item[0]] = item[-1]
-        id_to_name[item[-1]] = item[0]
-
-
-def handle_docker_ps_item(item):
-    if (all([len(t.strip()) > 1 for t in item])):
-        name_to_id[item[0]] = item[-1]
-        id_to_name[item[-1]] = item[0]
-
-
-def json_loads(content):
-    content = content.replace("b\'", "").replace("\'", "")
-    return json.loads(content)
-
-
-def handle_stdin(stdin, callback=None, verbose=False, callback2=None, is_json=False):
-    response_content = []
-    lines = str(stdin).split('\\n')
-    for line in lines:
-        resp = None
-        if (verbose):
-            print(line)
-        if (callable(callback)):
-            try:
-                __item__ = callback(line)
-            except Exception as ex:
-                exc_info = sys.exc_info()
-                traceback.print_exception(*exc_info)
-                del exc_info
-        item = line if (not callable(callback)) else __item__
-        if (callable(callback2)):
-            try:
-                resp = callback2(item)
-                if (resp):
-                    break
-            except Exception as ex:
-                exc_info = sys.exc_info()
-                traceback.print_exception(*exc_info)
-                del exc_info
-        response_content.append(item)
-    __content = ''.join(response_content) if (not isinstance(response_content[0] if (len(response_content) > 0) else response_content, list)) else ''
-    if (len(__content) > 0):
-        regex = r"^b\'(?P<content>.*)\'$"
-        matches = re.search(regex, __content)
-        __content = matches.groupdict().get('content') if (matches) else __content
-    if (is_json):
-        data = json_loads(__content) if (len(__content) > 0) else {}
-    if (verbose):
-        logger.info('DEBUG: __content -> {}'.format(__content))
-        logger.info('DEBUG: resp -> {}'.format(resp is not None))
-    return resp if (resp is not None) else data if (is_json) else __content
-
 __clean_ecr_command_line_option__ = '--clean-ecr'
 __push_ecr_command_line_option__ = '--push-ecr'
 __verbose_command_line_option__ = '--verbose'
 __single_command_line_option__ = '--single'
+__scanOnPush_command_line_option__ = '--scanOnPush'
 
 
 def find_aws_creds_or_config_src(fpath):
@@ -310,6 +201,10 @@ if (__name__ == '__main__'):
     '''
     --clean-ecr ... removes all known repos from the ECR - this is for development purposes only.
     '''
+    if (not is_running_production()):
+        sys.argv.append(__push_ecr_command_line_option__)
+        sys.argv.append(__single_command_line_option__)
+    
     is_verbose = any([str(arg).find(__verbose_command_line_option__) > -1 for arg in sys.argv])
     if (is_verbose):
         logger.info('verbose: {}'.format(__verbose_command_line_option__))
@@ -317,6 +212,10 @@ if (__name__ == '__main__'):
     is_single = any([str(arg).find(__single_command_line_option__) > -1 for arg in sys.argv])
     if (is_single):
         logger.info('{}'.format(__single_command_line_option__))
+    
+    is_scanOnPush = any([str(arg).find(__scanOnPush_command_line_option__) > -1 for arg in sys.argv])
+    if (is_scanOnPush):
+        logger.info('{}'.format(__scanOnPush_command_line_option__))
     
     is_cleaning_ecr = any([str(arg).find(__clean_ecr_command_line_option__) > -1 for arg in sys.argv])
     if (is_cleaning_ecr):
@@ -334,19 +233,24 @@ if (__name__ == '__main__'):
     __aws_config_src__ = find_aws_creds_or_config_src(__aws_config_src__)
     
     logger.info('Checking for aws creds.')
-    resp = handle_aws_creds_or_config(__aws_creds_src__, dest=__aws_creds_dest__, target=aws_creds)
+    resp = handle_aws_creds_or_config(__aws_creds_src__, target=aws_creds) # , dest=__aws_creds_dest__
 
     logger.info('Checking for aws config.')
-    resp = handle_aws_creds_or_config(__aws_config_src__, dest=__aws_config_dest__, target=aws_config)
+    resp = handle_aws_creds_or_config(__aws_config_src__, target=aws_config) # , dest=__aws_config_dest__
 
+    __aws_access_key_id = aws_creds.get(list(aws_creds.keys())[0], {}).get('aws_access_key_id')
+    assert is_really_something(__aws_access_key_id, str), 'Missing the aws_access_key_id, check your config files.'
+    
+    __aws_secret_access_key = aws_creds.get(list(aws_creds.keys())[0], {}).get('aws_secret_access_key')
+    assert is_really_something(__aws_secret_access_key, str), 'Missing the aws_secret_access_key, check your config files.'
+    
     ecr_client = boto3.client(
         'ecr',
-        aws_access_key_id=aws_creds.get(list(aws_creds.keys())[0], {}).get('aws_access_key_id'),
-        aws_secret_access_key=aws_creds.get(list(aws_creds.keys())[0], {}).get('aws_secret_access_key'),
-        region_name=aws_config.get(list(aws_config.keys())[0], {}).get('region')
+        aws_access_key_id=__aws_access_key_id,
+        aws_secret_access_key=__aws_secret_access_key,
+        region_name=aws_config.get(list(aws_config.keys())[0], {}).get('region', 'us-east-2')
     )        
 
-    is_pushing_ecr = True if (is_dry_run) else is_pushing_ecr
     if (is_pushing_ecr):
         import docker
         docker_client = docker.from_env()
@@ -376,16 +280,17 @@ if (__name__ == '__main__'):
 
         __images_by_id__ = {}
         for image in images:
-            iname = image.tags[0]
-            name_to_id[iname] = image.short_id
-            id_to_name[image.short_id] = iname
-            __images_by_id__[image.short_id] = image
+            if (len(image.tags) > 0):
+                iname = image.tags[0]
+                name_to_id[iname] = image.short_id
+                id_to_name[image.short_id] = iname
+                __images_by_id__[image.short_id] = image
 
         assert len(id_to_name) > 0, 'There are no docker images to handle.  Please resolve.'
         logger.info('There are {} docker images.'.format(len(id_to_name)))
     
     logger.info('{}'.format(' '.join(__aws_cli_ecr_describe_repos__)))
-    response = ecr_client.describe_repositories()    
+    response = ecr_client.describe_repositories()
     assert 'repositories' in response.keys(), 'Cannot "{}".  Please resolve.'.format(__aws_cli_ecr_describe_repos__)
     the_repositories = response.get('repositories', [])
     
@@ -400,8 +305,10 @@ if (__name__ == '__main__'):
                     repositoryName=repo.get('repositoryName'),
                     force=True
                 )                    
-                assert 'repository' in resp.keys(), 'Cannot "{}".  Please resolve.'.format(cmd)
-            logger.info('Done.')
+                statusKey = [k for k in response.get('ResponseMetadata', {}).keys() if (k.lower().find('statuscode') > -1)][0]
+                statusCode = int(eval(str(response.get('ResponseMetadata', {}).get(statusKey, -1))))
+                assert statusCode == 200, 'Failed command. The ECR Repo "{}" has not been removed.  Please resolve.'.format(repo.get('repositoryName'))
+            logger.info('Finished removing {} repos.'.format(len(the_repositories)))
         else:
             logger.info('Nothing to do.')
     
@@ -431,38 +338,61 @@ if (__name__ == '__main__'):
                 assert tag is not None, 'Problem with getting the image tag from the docker image. Please fix.'
 
                 logger.info('Create ECR repo "{}"'.format(name))
+                
                 cmd = [str(c).replace('{}', name) for c in __aws_cli_ecr_create_repo__]
-                result = subprocess.run(cmd, stdout=subprocess.PIPE)
-                resp = handle_stdin(result.stdout, callback2=None, verbose=False, is_json=True)
-                #assert 'repository' in resp.keys(), 'Cannot "{}".  Please resolve.'.format(' '.join(cmd))
+                logger.info('Create ECR repo "{}"'.format(' '.join(cmd)))
 
-                repo_uri = resp.get('repository', {}).get('repositoryUri')
+                response = ecr_client.create_repository(
+                    repositoryName=name,
+                    imageScanningConfiguration={
+                            'scanOnPush': True if (is_scanOnPush) else False
+                        },
+                )                
+                
+                repo_uri = response.get('repository', {}).get('repositoryUri')
                 assert repo_uri is not None, 'Cannot tag "{}".  Please resolve.'.format(name)
 
                 cmd = __docker_tag_cmd__.format(_id, repo_uri, tag)
-                result = subprocess.run(cmd.split(), stdout=subprocess.PIPE)
-                resp = handle_stdin(result.stdout, callback2=None, verbose=False, is_json=False)
+                logger.info('docker tag cmd: "{}"'.format(cmd))
 
+                image = __images_by_id__.get(_id)
+                assert image, 'Cannot locate the image for _id ({}).'.format(_id)
+                
+                if (not is_dry_run):
+                    resp = image.tag(repo_uri, tag=tag)
+                    assert resp, '{} was not successful.'.format(cmd)
+                
+                aws_access_token = ecr_client.get_authorization_token()
+                username, password = base64.b64decode(aws_access_token['authorizationData'][0]['authorizationToken']).decode().split(':')
+                registry = aws_access_token['authorizationData'][0]['proxyEndpoint']
+                
                 cmd = __aws_docker_login__.format(repo_uri.split('/')[0])
-                result = subprocess.run(cmd.split(), stdout=subprocess.PIPE)
-                resp = handle_stdin(result.stdout, callback2=None, verbose=True, is_json=False)
+                logger.info('docker login cmd: "{}"'.format(cmd))
+
+                resp = docker_client.login(username, password, registry=registry)
                 assert resp == __expected_aws_docker_login__, 'Cannot login for docker "{}".  Please resolve.'.format(cmd)
                 
                 cmd = __docker_push_cmd__.format(repo_uri, tag)
-                logger.info('BEGIN: {}'.format(cmd))
-                logger.info('\t\tPlease be patient this will take some time.')
-                result = subprocess.run(cmd.split(), stdout=subprocess.PIPE)
-                resp = handle_stdin(result.stdout, callback2=None, verbose=False, is_json=False)
-                assert repo_uri is not None, 'Cannot tag "{}".  Please resolve.'.format(name)
-                logger.info('END: {}'.format(cmd))
-                logger.info('\n')
-            except:
+                logger.info('docker push cmd: "{}"'.format(cmd))
+                
+                for resp in docker_client.images.push(repo_uri, tag=tag, stream=True, decode=True):
+                    logger.info('{}'.format(resp))
+
+                if (0):                
+                    logger.info('BEGIN: {}'.format(cmd))
+                    logger.info('\t\tPlease be patient this will take some time.')
+                    result = subprocess.run(cmd.split(), stdout=subprocess.PIPE)
+                    resp = handle_stdin(result.stdout, callback2=None, verbose=False, is_json=False)
+                    assert repo_uri is not None, 'Cannot tag "{}".  Please resolve.'.format(name)
+                    logger.info('END: {}'.format(cmd))
+                    logger.info('\n')
+            except Exception:
+                logger.error("Fatal error in task", exc_info=True)
                 issues_count += 1
             
             vector['result'] = True if (issues_count == 0) else False
             return vector
             
-        is_single = True if (is_dry_run) else is_single
         if (not is_single):
             __max_workers = len(create_the_repos)+1
             executor = futures.ProcessPoolExecutor(max_workers=__max_workers)
@@ -490,9 +420,4 @@ if (__name__ == '__main__'):
                 logger.info('main-thread: Progress: {} of {} or {:.2%} completed'.format(count_completed, count_started, (count_completed / count_started)))
             logger.info('DONE!!!')
         
-    if (0):
-        logger.info('{}'.format(__docker_system_prune__))
-        result = subprocess.run(__docker_system_prune__, stdout=subprocess.PIPE)
-        resp = handle_stdin(result.stdout, callback2=None, verbose=False, is_json=False)
-    
-        
+    logger.info('"{}" is DONE!'.format(sys.argv[0]))
