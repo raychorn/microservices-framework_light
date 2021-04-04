@@ -204,6 +204,7 @@ if (__name__ == '__main__'):
     if (not is_running_production()):
         sys.argv.append(__push_ecr_command_line_option__)
         sys.argv.append(__single_command_line_option__)
+        sys.argv.append(__clean_ecr_command_line_option__)
     
     is_verbose = any([str(arg).find(__verbose_command_line_option__) > -1 for arg in sys.argv])
     if (is_verbose):
@@ -370,22 +371,13 @@ if (__name__ == '__main__'):
                 logger.info('docker login cmd: "{}"'.format(cmd))
 
                 resp = docker_client.login(username, password, registry=registry)
-                assert resp == __expected_aws_docker_login__, 'Cannot login for docker "{}".  Please resolve.'.format(cmd)
+                assert resp.get('Status') == __expected_aws_docker_login__, 'Cannot login for docker "{}".  Please resolve.'.format(cmd)
                 
                 cmd = __docker_push_cmd__.format(repo_uri, tag)
                 logger.info('docker push cmd: "{}"'.format(cmd))
                 
                 for resp in docker_client.images.push(repo_uri, tag=tag, stream=True, decode=True):
                     logger.info('{}'.format(resp))
-
-                if (0):                
-                    logger.info('BEGIN: {}'.format(cmd))
-                    logger.info('\t\tPlease be patient this will take some time.')
-                    result = subprocess.run(cmd.split(), stdout=subprocess.PIPE)
-                    resp = handle_stdin(result.stdout, callback2=None, verbose=False, is_json=False)
-                    assert repo_uri is not None, 'Cannot tag "{}".  Please resolve.'.format(name)
-                    logger.info('END: {}'.format(cmd))
-                    logger.info('\n')
             except Exception:
                 logger.error("Fatal error in task", exc_info=True)
                 issues_count += 1
