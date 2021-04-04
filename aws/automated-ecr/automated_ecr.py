@@ -135,6 +135,82 @@ __push_ecr_command_line_option__ = '--push-ecr'
 __verbose_command_line_option__ = '--verbose'
 __single_command_line_option__ = '--single'
 __scanOnPush_command_line_option__ = '--scanOnPush'
+__timetags_command_line_option__ = '--timetags'
+
+
+def _formatTimeStr():
+    return '%Y-%m-%dT%H:%M:%S'
+
+def utcDelta():
+    import datetime, time
+    _uts = datetime.datetime.utcfromtimestamp(time.time())
+    _ts = datetime.datetime.fromtimestamp(time.time())
+    return (_uts - _ts if (_uts > _ts) else _ts - _uts)
+
+def getAsDateTimeStr(value, offset=0,fmt=_formatTimeStr()):
+    """ return time as 2004-01-10T00:13:50.000Z """
+    import sys,time
+    import types
+    from datetime import datetime
+
+    if (not isinstance(offset,str)):
+        if isinstance(value, (tuple, time.struct_time,)):
+            return time.strftime(fmt, value)
+        if isinstance(value, (int, float,)):
+            secs = time.gmtime(value+offset)
+            return time.strftime(fmt, secs)
+
+        if isinstance(value, str):
+            try: 
+                value = time.strptime(value, fmt)
+                return time.strftime(fmt, value)
+            except: 
+                secs = time.gmtime(time.time()+offset)
+                return time.strftime(fmt, secs)
+        elif (isinstance(value,datetime)):
+            from datetime import timedelta
+            if (offset is not None):
+                value += timedelta(offset)
+            ts = time.strftime(fmt, value.timetuple())
+            return ts
+# END getAsDateTimeStr
+
+def getFromDateTimeStr(ts,format=_formatTimeStr()):
+    from datetime import datetime
+    try:
+        return datetime.strptime(ts,format)
+    except ValueError:
+        return datetime.strptime('.'.join(ts.split('.')[0:-1]),format)
+
+def getFromDateStr(ts,format=_formatTimeStr()):
+    return getFromDateTimeStr(ts,format=format)
+
+def timeSeconds(month=-1,day=-1,year=-1,format=_formatTimeStr()):
+    """ get number of seconds """
+    import time, datetime
+    fromSecs = datetime.datetime.fromtimestamp(time.time())
+    s = getAsDateTimeStr(fromSecs,fmt=format)
+    _toks = s.split('T')
+    toks = _toks[0].split('-')
+    if (month > -1):
+        toks[0] = '%02d' % (month)
+    if (day > -1):
+        toks[1] = '%02d' % (day)
+    if (year > -1):
+        toks[-1] = '%04d' % (year)
+    _toks[0] = '-'.join(toks)
+    s = 'T'.join(_toks)
+    fromSecs = getFromDateStr(s,format=format)
+    return time.mktime(fromSecs.timetuple())
+
+def timeStamp(tsecs=0,offset=0,use_iso=False,format=_formatTimeStr(),useLocalTime=True):
+    """ get standard timestamp """
+    import time
+    from datetime import datetime
+    secs = 0 if (not useLocalTime) else -utcDelta().seconds
+    tsecs = tsecs if (tsecs > 0) else timeSeconds()
+    t = tsecs+secs+offset
+    return getAsDateTimeStr(t if (tsecs > abs(secs)) else tsecs,fmt=format) if (not use_iso) else datetime.fromtimestamp(t).isoformat()
 
 
 def find_aws_creds_or_config_src(fpath):
@@ -209,6 +285,7 @@ if (__name__ == '__main__'):
         sys.argv.append(__push_ecr_command_line_option__)
         sys.argv.append(__single_command_line_option__)
         sys.argv.append(__clean_ecr_command_line_option__)
+        sys.argv.append(__timetags_command_line_option__)
     
     is_verbose = any([str(arg).find(__verbose_command_line_option__) > -1 for arg in sys.argv])
     if (is_verbose):
@@ -229,6 +306,10 @@ if (__name__ == '__main__'):
     is_pushing_ecr = any([str(arg).find(__push_ecr_command_line_option__) > -1 for arg in sys.argv])
     if (is_pushing_ecr):
         logger.info('{}'.format(__push_ecr_command_line_option__))
+
+    is_timetags = any([str(arg).find(__timetags_command_line_option__) > -1 for arg in sys.argv])
+    if (is_timetags):
+        logger.info('{}'.format(__timetags_command_line_option__))
 
     is_dry_run = (not is_cleaning_ecr) and (not is_pushing_ecr)
     if (is_dry_run):
@@ -342,6 +423,9 @@ if (__name__ == '__main__'):
                 assert name is not None, 'Problem with getting the image name from the docker image. Please fix.'
                 tag = vector.get('tag')
                 assert tag is not None, 'Problem with getting the image tag from the docker image. Please fix.'
+                
+                if (is_timetags):
+                    tag = '{}+{}'.format(tag, timeStamp(offset=0, use_iso=True))
 
                 logger.info('Create ECR repo "{}"'.format(name))
 
