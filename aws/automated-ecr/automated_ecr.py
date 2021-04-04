@@ -16,6 +16,8 @@ import base64
 
 import mujson as json
 
+__docker_config_json__ = os.path.expanduser('~/.docker/config.json')
+
 __aws_creds_dest__ = os.path.expanduser('~/.aws/credentials')
 __aws_creds_src__ = './.aws/credentials'
 
@@ -339,19 +341,34 @@ if (__name__ == '__main__'):
                 assert tag is not None, 'Problem with getting the image tag from the docker image. Please fix.'
 
                 logger.info('Create ECR repo "{}"'.format(name))
-                
-                cmd = [str(c).replace('{}', name) for c in __aws_cli_ecr_create_repo__]
-                logger.info('Create ECR repo "{}"'.format(' '.join(cmd)))
 
-                response = ecr_client.create_repository(
-                    repositoryName=name,
-                    imageScanningConfiguration={
-                            'scanOnPush': True if (is_scanOnPush) else False
-                        },
-                )                
+                logger.info('{}'.format(' '.join(__aws_cli_ecr_describe_repos__)))
+                response = ecr_client.describe_repositories()
+                the_repositories = response.get('repositories', [])
+                does_repo_exist = False
+                for repo in the_repositories:
+                    repo_name = repo.get('repositoryName')
+                    if (is_really_something(repo_name, str)):
+                        if (repo_name == name):
+                            does_repo_exist = True
+                            repo_uri = repo.get('repositoryUri')
+                            break
                 
-                repo_uri = response.get('repository', {}).get('repositoryUri')
-                assert repo_uri is not None, 'Cannot tag "{}".  Please resolve.'.format(name)
+                if (does_repo_exist):
+                    logger.info('ECR Repo named "{}" already exists possibly from a previous push so not creating it this time.'.format(name))
+                else:
+                    cmd = [str(c).replace('{}', name) for c in __aws_cli_ecr_create_repo__]
+                    logger.info('Create ECR repo "{}"'.format(' '.join(cmd)))
+
+                    response = ecr_client.create_repository(
+                        repositoryName=name,
+                        imageScanningConfiguration={
+                                'scanOnPush': True if (is_scanOnPush) else False
+                            },
+                    )                
+                
+                    repo_uri = response.get('repository', {}).get('repositoryUri')
+                    assert repo_uri is not None, 'Cannot tag "{}".  Please resolve.'.format(name)
 
                 cmd = __docker_tag_cmd__.format(_id, repo_uri, tag)
                 logger.info('docker tag cmd: "{}"'.format(cmd))
@@ -366,6 +383,7 @@ if (__name__ == '__main__'):
                 aws_access_token = ecr_client.get_authorization_token()
                 username, password = base64.b64decode(aws_access_token['authorizationData'][0]['authorizationToken']).decode().split(':')
                 registry = aws_access_token['authorizationData'][0]['proxyEndpoint']
+                registry = registry.replace('https://', 'http://')
                 
                 cmd = __aws_docker_login__.format(repo_uri.split('/')[0])
                 logger.info('docker login cmd: "{}"'.format(cmd))
@@ -385,6 +403,10 @@ if (__name__ == '__main__'):
             vector['result'] = True if (issues_count == 0) else False
             return vector
             
+        if (os.path.exists(__docker_config_json__)):
+            logger.info('Removing the docker config: "{}" Reason: This file tends to cause issues with the Auto-ECR Process when it exists.'.format(__docker_config_json__))
+            os.remove(__docker_config_json__)
+        
         if (not is_single):
             __max_workers = len(create_the_repos)+1
             executor = futures.ProcessPoolExecutor(max_workers=__max_workers)
