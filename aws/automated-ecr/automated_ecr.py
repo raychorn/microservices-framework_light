@@ -372,6 +372,9 @@ if (__name__ == '__main__'):
                     name_to_id[iname] = image.short_id
                     id_to_name[image.short_id] = iname
                     __images_by_id__[image.short_id] = image
+                else:
+                    logger.info('Removing local docker image named "{}" because this is a previous ECR artifact.'.format(iname))
+                    docker_client.images.remove(image=iname, force=True)
 
         assert len(id_to_name) > 0, 'There are no docker images to handle.  Please resolve.'
         logger.info('There are {} docker images.'.format(len(id_to_name)))
