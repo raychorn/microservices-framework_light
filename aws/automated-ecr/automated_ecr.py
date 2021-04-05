@@ -277,15 +277,22 @@ def handle_aws_creds_or_config(fpath, dest=None, target=None):
     return resp
 
 
+def get_ecr_report_fname(repo_uri):
+    fname = repo_uri.replace('/','+').split("://")[-1]
+    report_filename = '{}{}{}{}{}{}ECR-Report-{}_{}.txt'.format('reports', os.sep, base_filename, os.sep, production_token if (is_running_production()) else development_token, os.sep, fname, default_timestamp(datetime.utcnow()))
+    return os.sep.join([os.path.dirname(__file__), report_filename])
+    
+
 if (__name__ == '__main__'):
     '''
     --clean-ecr ... removes all known repos from the ECR - this is for development purposes only.
     '''
     if (not is_running_production()):
         sys.argv.append(__push_ecr_command_line_option__)
-        sys.argv.append(__single_command_line_option__)
+        #sys.argv.append(__single_command_line_option__)
         sys.argv.append(__clean_ecr_command_line_option__)
         sys.argv.append(__timetags_command_line_option__)
+        sys.argv.append(__verbose_command_line_option__)
     
     is_verbose = any([str(arg).find(__verbose_command_line_option__) > -1 for arg in sys.argv])
     if (is_verbose):
@@ -373,6 +380,10 @@ if (__name__ == '__main__'):
                     id_to_name[image.short_id] = iname
                     __images_by_id__[image.short_id] = image
                 else:
+                    fname = get_ecr_report_fname(iname.split(':')[0])
+                    if (os.path.exists(fname)):
+                        logger.info('Removing ECR Report named "{}" because this is a previous ECR artifact.'.format(fname))
+                        os.remove(fname)
                     logger.info('Removing local docker image named "{}" because this is a previous ECR artifact.'.format(iname))
                     docker_client.images.remove(image=iname, force=True)
 
@@ -417,6 +428,8 @@ if (__name__ == '__main__'):
                     
         #print(json.dumps({'create_the_repos': create_the_repos}, indent=3))
         
+        __ecr_docker_login_cache__ = {}
+        
         def task(vector={}):
             issues_count = 0
             try:
@@ -428,7 +441,7 @@ if (__name__ == '__main__'):
                 assert tag is not None, 'Problem with getting the image tag from the docker image. Please fix.'
                 
                 if (is_timetags):
-                    tag = '{}+{}'.format(tag, timeStamp(offset=0, use_iso=True))
+                    tag = '{}.{}'.format(tag, timeStamp(offset=0, use_iso=True).replace(':', '').replace('-', ''))
 
                 logger.info('Create ECR repo "{}"'.format(name))
 
@@ -466,26 +479,38 @@ if (__name__ == '__main__'):
                 image = __images_by_id__.get(_id)
                 assert image, 'Cannot locate the image for _id ({}).'.format(_id)
                 
-                if (not is_dry_run):
-                    resp = image.tag(repo_uri, tag=tag)
-                    assert resp, '{} was not successful.'.format(cmd)
-                
-                aws_access_token = ecr_client.get_authorization_token()
-                username, password = base64.b64decode(aws_access_token['authorizationData'][0]['authorizationToken']).decode().split(':')
-                registry = aws_access_token['authorizationData'][0]['proxyEndpoint']
-                registry = registry.replace('https://', 'http://')
-                
-                cmd = __aws_docker_login__.format(repo_uri.split('/')[0])
-                logger.info('docker login cmd: "{}"'.format(cmd))
+                resp = image.tag(repo_uri, tag=tag)
+                assert resp, '{} was not successful.'.format(cmd)
 
-                resp = docker_client.login(username, password, registry=registry)
-                assert resp.get('Status') == __expected_aws_docker_login__, 'Cannot login for docker "{}".  Please resolve.'.format(cmd)
+                __repo_uri = repo_uri.split('/')[0]
+                if (not __ecr_docker_login_cache__.get(__repo_uri, False)):
+                    aws_access_token = ecr_client.get_authorization_token()
+                    username, password = base64.b64decode(aws_access_token['authorizationData'][0]['authorizationToken']).decode().split(':')
+                    registry = aws_access_token['authorizationData'][0]['proxyEndpoint']
+                    registry = registry.replace('https://', 'http://')
+                    
+                    cmd = __aws_docker_login__.format(repo_uri.split('/')[0])
+                    logger.info('docker login cmd: "{}"'.format(cmd))
+
+                    resp = docker_client.login(username, password, registry=registry)
+                    assert resp.get('Status') == __expected_aws_docker_login__, 'Cannot login for docker "{}".  Please resolve.'.format(cmd)
+                    __ecr_docker_login_cache__[__repo_uri] = True
                 
-                cmd = __docker_push_cmd__.format(repo_uri, tag)
-                logger.info('docker push cmd: "{}"'.format(cmd))
-                
-                for resp in docker_client.images.push(repo_uri, tag=tag, stream=True, decode=True):
-                    logger.info('{}'.format(resp))
+                if (not is_dry_run):
+                    cmd = __docker_push_cmd__.format(repo_uri, tag)
+                    logger.info('docker push cmd: "{}"'.format(cmd))
+                    
+                    report_filename = get_ecr_report_fname(repo_uri)
+                    if not os.path.exists(os.path.dirname(report_filename)):
+                        os.makedirs(os.path.dirname(report_filename))
+
+                    with open(report_filename, 'w') as fOut:
+                        reports = []
+                        for resp in docker_client.images.push(repo_uri, tag=tag, stream=True, decode=True):
+                            if (is_verbose):
+                                print('{}'.format(resp))
+                            reports.append(resp)
+                        json.dump(reports, fOut, ensure_ascii=True, check_circular=True, allow_nan=True, indent=3, sort_keys=True)
             except Exception:
                 logger.error("Fatal error in task", exc_info=True)
                 issues_count += 1
