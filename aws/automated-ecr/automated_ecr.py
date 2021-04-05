@@ -136,6 +136,7 @@ __verbose_command_line_option__ = '--verbose'
 __single_command_line_option__ = '--single'
 __scanOnPush_command_line_option__ = '--scanOnPush'
 __timetags_command_line_option__ = '--timetags'
+__detailed_ecr_report_command_line_option__ = '--detailed'
 
 
 def _formatTimeStr():
@@ -279,8 +280,16 @@ def handle_aws_creds_or_config(fpath, dest=None, target=None):
 
 def get_ecr_report_fname(repo_uri):
     fname = repo_uri.replace('/','+').split("://")[-1]
-    report_filename = '{}{}{}{}{}{}ECR-Report-{}_{}.txt'.format('reports', os.sep, base_filename, os.sep, production_token if (is_running_production()) else development_token, os.sep, fname, default_timestamp(datetime.utcnow()))
+    report_filename = '{}{}{}{}{}{}ECR-Report-{}_{}.json'.format('reports', os.sep, base_filename, os.sep, production_token if (is_running_production()) else development_token, os.sep, fname, default_timestamp(datetime.utcnow()))
     return os.sep.join([os.path.dirname(__file__), report_filename])
+
+def find_file_in_like(fpath, fname_pattern):
+    root = fpath if (os.path.exists(fpath) and os.path.isdir(fpath)) else os.path.dirname(fpath) if (os.path.exists(fpath) and os.path.isfile(fpath)) else None
+    assert (is_really_something(root, str)) and os.path.exists(root) and os.path.isdir(root), 'Cannot determine if "{}" is a directory, maybe this is a file.'.format(root)
+    for fp in [os.sep.join([root, n]) for n in os.listdir(root)]:
+        if (fp.find(fname_pattern) > -1):
+            return fp
+    return None
     
 
 if (__name__ == '__main__'):
@@ -289,10 +298,11 @@ if (__name__ == '__main__'):
     '''
     if (not is_running_production()):
         sys.argv.append(__push_ecr_command_line_option__)
-        #sys.argv.append(__single_command_line_option__)
+        sys.argv.append(__single_command_line_option__)
         sys.argv.append(__clean_ecr_command_line_option__)
         sys.argv.append(__timetags_command_line_option__)
         sys.argv.append(__verbose_command_line_option__)
+        sys.argv.append(__detailed_ecr_report_command_line_option__)
     
     is_verbose = any([str(arg).find(__verbose_command_line_option__) > -1 for arg in sys.argv])
     if (is_verbose):
@@ -317,6 +327,10 @@ if (__name__ == '__main__'):
     is_timetags = any([str(arg).find(__timetags_command_line_option__) > -1 for arg in sys.argv])
     if (is_timetags):
         logger.info('{}'.format(__timetags_command_line_option__))
+
+    is_detailed = any([str(arg).find(__detailed_ecr_report_command_line_option__) > -1 for arg in sys.argv])
+    if (is_detailed):
+        logger.info('{}'.format(__detailed_ecr_report_command_line_option__))
 
     is_dry_run = (not is_cleaning_ecr) and (not is_pushing_ecr)
     if (is_dry_run):
@@ -381,9 +395,11 @@ if (__name__ == '__main__'):
                     __images_by_id__[image.short_id] = image
                 else:
                     fname = get_ecr_report_fname(iname.split(':')[0])
-                    if (os.path.exists(fname)):
-                        logger.info('Removing ECR Report named "{}" because this is a previous ECR artifact.'.format(fname))
-                        os.remove(fname)
+                    fname = find_file_in_like(os.path.dirname(fname), iname.split(':')[0].replace('/', '+'))
+                    if (is_really_something(fname, str)):
+                        if (os.path.exists(fname)):
+                            logger.info('Removing ECR Report named "{}" because this is a previous ECR artifact.'.format(fname))
+                            os.remove(fname)
                     logger.info('Removing local docker image named "{}" because this is a previous ECR artifact.'.format(iname))
                     docker_client.images.remove(image=iname, force=True)
 
@@ -510,7 +526,10 @@ if (__name__ == '__main__'):
                             if (is_verbose):
                                 print('{}'.format(resp))
                             reports.append(resp)
-                        json.dump(reports, fOut, ensure_ascii=True, check_circular=True, allow_nan=True, indent=3, sort_keys=True)
+                        if (is_detailed):
+                            json.dump(reports, fOut, ensure_ascii=True, check_circular=True, allow_nan=True, indent=3, sort_keys=True)
+                    if (not is_detailed):
+                        os.remove(report_filename)
             except Exception:
                 logger.error("Fatal error in task", exc_info=True)
                 issues_count += 1
