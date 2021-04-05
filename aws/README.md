@@ -69,6 +69,8 @@ sudo ./ecr-push-all.sh
 
 ## Usage
 
+Use of this Command Line tool can result in the user needing to perform a docker login if this was done from the Linux Command before running this tool.
+
 ### --help
 
 ```
