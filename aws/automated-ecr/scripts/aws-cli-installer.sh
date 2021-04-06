@@ -1,8 +1,14 @@
 #!/usr/bin/env bash
 
-cd /tmp
-mkdir @1
-cd @1
+tdir="/tmp/@1"
+if [[ -d "$tdir" ]]
+then
+	rm -R -f $tdir
+else
+	mkdir $tdir
+fi
+cd $tdir
+
 
 cpu_arch=$(uname -m)
 
