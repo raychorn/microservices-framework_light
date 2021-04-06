@@ -37,7 +37,7 @@ __aws_cli_login__ = __aws_cli_login__[0].split()
 
 __aws_cli_ecr_describe_repos__ = ['aws', 'ecr', 'describe-repositories']
 
-__aws_cli_ecr_create_repo__ = ['aws', 'ecr', 'create-repository', '--repository-name', '{}', '--image-scanning-configuration', 'scanOnPush=true']
+__aws_cli_ecr_create_repo__ = ['aws', 'ecr', 'create-repository', '--repository-name', '{}', '--image-scanning-configuration']
 
 __docker_tag_cmd__ = 'docker tag {} {}:{}'
 
@@ -477,6 +477,7 @@ if (__name__ == '__main__'):
                     logger.info('ECR Repo named "{}" already exists possibly from a previous push so not creating it this time.'.format(name))
                 else:
                     cmd = [str(c).replace('{}', name) for c in __aws_cli_ecr_create_repo__]
+                    cmd.append('scanonpush={}'.format(is_scanOnPush))
                     logger.info('Create ECR repo "{}"'.format(' '.join(cmd)))
 
                     response = ecr_client.create_repository(
