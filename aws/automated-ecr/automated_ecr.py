@@ -137,6 +137,8 @@ __single_command_line_option__ = '--single'
 __scanOnPush_command_line_option__ = '--scanOnPush'
 __timetags_command_line_option__ = '--timetags'
 __detailed_ecr_report_command_line_option__ = '--detailed'
+__dryrun_command_line_option__ = '--dryrun'
+__terraform_command_line_option__ = '--terraform' # --terraform=path
 
 
 def _formatTimeStr():
@@ -293,16 +295,18 @@ def find_file_in_like(fpath, fname_pattern):
     
 
 if (__name__ == '__main__'):
-    '''
-    --clean-ecr ... removes all known repos from the ECR - this is for development purposes only.
-    '''
+    terraform_root = None
+
     if (not is_running_production()):
-        sys.argv.append(__push_ecr_command_line_option__)
-        sys.argv.append(__single_command_line_option__)
-        sys.argv.append(__clean_ecr_command_line_option__)
-        sys.argv.append(__timetags_command_line_option__)
+        if (0):
+            sys.argv.append(__push_ecr_command_line_option__)
+            sys.argv.append(__single_command_line_option__)
+            sys.argv.append(__clean_ecr_command_line_option__)
+            sys.argv.append(__timetags_command_line_option__)
+            sys.argv.append(__detailed_ecr_report_command_line_option__)
+            #sys.argv.append(__dryrun_command_line_option__)
         sys.argv.append(__verbose_command_line_option__)
-        sys.argv.append(__detailed_ecr_report_command_line_option__)
+        sys.argv.append(__terraform_command_line_option__)
     
     is_verbose = any([str(arg).find(__verbose_command_line_option__) > -1 for arg in sys.argv])
     if (is_verbose):
@@ -332,9 +336,35 @@ if (__name__ == '__main__'):
     if (is_detailed):
         logger.info('{}'.format(__detailed_ecr_report_command_line_option__))
 
-    is_dry_run = (not is_cleaning_ecr) and (not is_pushing_ecr)
+    terraform_options = [arg for arg in sys.argv if (str(arg).find(__terraform_command_line_option__) > -1)]
+    is_terraform = len(terraform_options) > 0
+    if (is_terraform):
+        __terraform_root = terraform_options[0].split('=')[-1]
+        assert (os.path.exists(__terraform_root)), 'Cannot find the directory named "{}".'.format(__terraform_root)
+        if (os.path.exists(__terraform_root)):
+            terraform_root = __terraform_root if (os.path.isdir(__terraform_root)) else os.path.dirname(__terraform_root)
+        logger.info('{}{}'.format(__terraform_command_line_option__, ' :: terraform root directory "{}"'.format(terraform_root) if (os.path.exists(__terraform_root)) else ''))
+
+
+    is_dry_run = (not is_cleaning_ecr) and (not is_pushing_ecr) and (not is_terraform)
+
+    __is_dry_run = any([str(arg).find(__dryrun_command_line_option__) > -1 for arg in sys.argv])
+    if (__is_dry_run):
+        is_dry_run = __is_dry_run
+        logger.info('{}'.format(__dryrun_command_line_option__))
+
+
     if (is_dry_run):
-        logger.info('No command line options given. Performing a dry-run with no actions taken.')
+        logger.info('Performing a dry-run with no actions taken. Disabling all actionable options.')
+    
+    
+    from dotenv import find_dotenv
+    __root__ = find_dotenv()
+    if (os.path.exists(__root__)):
+        __root__ = os.path.dirname(__root__)
+        if (not is_really_something(terraform_root, str)):
+            terraform_root = __root__
+    logger.info('Found .env file here "{}".'.format(__root__))
     
     __aws_creds_src__ = find_aws_creds_or_config_src(__aws_creds_src__)
     __aws_config_src__ = find_aws_creds_or_config_src(__aws_config_src__)
@@ -398,13 +428,16 @@ if (__name__ == '__main__'):
                     fname = find_file_in_like(os.path.dirname(fname), iname.split(':')[0].replace('/', '+'))
                     if (is_really_something(fname, str)):
                         if (os.path.exists(fname)):
-                            logger.info('Removing ECR Report named "{}" because this is a previous ECR artifact.'.format(fname))
-                            os.remove(fname)
-                    logger.info('Removing local docker image named "{}" because this is a previous ECR artifact.'.format(iname))
-                    docker_client.images.remove(image=iname, force=True)
+                            logger.info('Removing ECR Report named "{}" because this is a previous ECR artifact{}.'.format(fname, ' :: DRY-RUN' if (is_dry_run) else ''))
+                            if (not is_dry_run):
+                                os.remove(fname)
+                    logger.info('Removing local docker image named "{}" because this is a previous ECR artifact{}.'.format(iname, ' :: DRY-RUN' if (is_dry_run) else ''))
+                    if (not is_dry_run):
+                        docker_client.images.remove(image=iname, force=True)
 
-        assert len(id_to_name) > 0, 'There are no docker images to handle.  Please resolve.'
-        logger.info('There are {} docker images.'.format(len(id_to_name)))
+        if (not is_terraform):
+            assert len(id_to_name) > 0, 'There are no docker images to handle and nothing more to do.  Please resolve if you wanted to ECR some Docker Images.'
+            logger.info('There are {} docker images.'.format(len(id_to_name)))
     
     logger.info('{}'.format(' '.join(__aws_cli_ecr_describe_repos__)))
     response = ecr_client.describe_repositories()
@@ -416,18 +449,19 @@ if (__name__ == '__main__'):
             for repo in the_repositories:
                 repo_name = repo.get('repositoryName')
                 assert repo_name is not None, 'Cannot remove {} due to the lack of information. Please resolve.'.format(json.dumps(repo, indet=3))
-                logger.info('Removing the repo named "{}".'.format(repo_name))
-                response = ecr_client.delete_repository(
-                    registryId=repo.get('registryId'),
-                    repositoryName=repo.get('repositoryName'),
-                    force=True
-                )                    
-                statusKey = [k for k in response.get('ResponseMetadata', {}).keys() if (k.lower().find('statuscode') > -1)][0]
-                statusCode = int(eval(str(response.get('ResponseMetadata', {}).get(statusKey, -1))))
-                assert statusCode == 200, 'Failed command. The ECR Repo "{}" has not been removed.  Please resolve.'.format(repo.get('repositoryName'))
-            logger.info('Finished removing {} repos.'.format(len(the_repositories)))
+                logger.info('Removing the repo named "{}"{}.'.format(repo_name, ' :: DRY-RUN' if (is_dry_run) else ''))
+                if (not is_dry_run):
+                    response = ecr_client.delete_repository(
+                        registryId=repo.get('registryId'),
+                        repositoryName=repo.get('repositoryName'),
+                        force=True
+                    )                    
+                    statusKey = [k for k in response.get('ResponseMetadata', {}).keys() if (k.lower().find('statuscode') > -1)][0]
+                    statusCode = int(eval(str(response.get('ResponseMetadata', {}).get(statusKey, -1))))
+                    assert statusCode == 200, 'Failed command. The ECR Repo "{}" has not been removed.  Please resolve.'.format(repo.get('repositoryName'))
+            logger.info('Finished removing {} repos{}.'.format(len(the_repositories), ' :: DRY-RUN' if (is_dry_run) else ''))
         else:
-            logger.info('Nothing to do.')
+            logger.info('There were no ECR Repos to remove and the command line option was used to perform this action.')
     
     if (is_pushing_ecr):
         create_the_repos = []
@@ -442,8 +476,6 @@ if (__name__ == '__main__'):
                 if (not __is__):
                     create_the_repos.append({'name':possible_repo_name.split('/')[-1], 'tag': image_name.split(':')[-1], 'id': image_id})
                     
-        #print(json.dumps({'create_the_repos': create_the_repos}, indent=3))
-        
         __ecr_docker_login_cache__ = {}
         
         def task(vector={}):
@@ -477,60 +509,63 @@ if (__name__ == '__main__'):
                     logger.info('ECR Repo named "{}" already exists possibly from a previous push so not creating it this time.'.format(name))
                 else:
                     cmd = [str(c).replace('{}', name) for c in __aws_cli_ecr_create_repo__]
-                    cmd.append('scanonpush={}'.format(is_scanOnPush))
-                    logger.info('Create ECR repo "{}"'.format(' '.join(cmd)))
+                    cmd.append('scanonPush={}'.format(is_scanOnPush))
+                    logger.info('Create ECR repo "{}"{}'.format(' '.join(cmd), ' :: DRY-RUN' if (is_dry_run) else ''))
 
-                    response = ecr_client.create_repository(
-                        repositoryName=name,
-                        imageScanningConfiguration={
-                                'scanOnPush': True if (is_scanOnPush) else False
-                            },
-                    )                
-                
-                    repo_uri = response.get('repository', {}).get('repositoryUri')
-                    assert repo_uri is not None, 'Cannot tag "{}".  Please resolve.'.format(name)
-
-                cmd = __docker_tag_cmd__.format(_id, repo_uri, tag)
-                logger.info('docker tag cmd: "{}"'.format(cmd))
-
-                image = __images_by_id__.get(_id)
-                assert image, 'Cannot locate the image for _id ({}).'.format(_id)
-                
-                resp = image.tag(repo_uri, tag=tag)
-                assert resp, '{} was not successful.'.format(cmd)
-
-                __repo_uri = repo_uri.split('/')[0]
-                if (not __ecr_docker_login_cache__.get(__repo_uri, False)):
-                    aws_access_token = ecr_client.get_authorization_token()
-                    username, password = base64.b64decode(aws_access_token['authorizationData'][0]['authorizationToken']).decode().split(':')
-                    registry = aws_access_token['authorizationData'][0]['proxyEndpoint']
-                    registry = registry.replace('https://', 'http://')
+                    if (is_dry_run):
+                        logger.info('{}'.format(' DRY-RUN -- Nothing being done due to Dry Run.' if (is_dry_run) else ''))
+                    else:
+                        response = ecr_client.create_repository(
+                            repositoryName=name,
+                            imageScanningConfiguration={
+                                    'scanOnPush': True if (is_scanOnPush) else False
+                                },
+                        )                
                     
-                    cmd = __aws_docker_login__.format(repo_uri.split('/')[0])
-                    logger.info('docker login cmd: "{}"'.format(cmd))
+                        repo_uri = response.get('repository', {}).get('repositoryUri')
+                        assert repo_uri is not None, 'Cannot tag "{}".  Please resolve.'.format(name)
 
-                    resp = docker_client.login(username, password, registry=registry)
-                    assert resp.get('Status') == __expected_aws_docker_login__, 'Cannot login for docker "{}".  Please resolve.'.format(cmd)
-                    __ecr_docker_login_cache__[__repo_uri] = True
-                
-                if (not is_dry_run):
-                    cmd = __docker_push_cmd__.format(repo_uri, tag)
-                    logger.info('docker push cmd: "{}"'.format(cmd))
+                    cmd = __docker_tag_cmd__.format(_id, repo_uri, tag)
+                    logger.info('docker tag cmd: "{}"'.format(cmd))
+
+                    image = __images_by_id__.get(_id)
+                    assert image, 'Cannot locate the image for _id ({}).'.format(_id)
                     
-                    report_filename = get_ecr_report_fname(repo_uri)
-                    if not os.path.exists(os.path.dirname(report_filename)):
-                        os.makedirs(os.path.dirname(report_filename))
+                    resp = image.tag(repo_uri, tag=tag)
+                    assert resp, '{} was not successful.'.format(cmd)
 
-                    with open(report_filename, 'w') as fOut:
-                        reports = []
-                        for resp in docker_client.images.push(repo_uri, tag=tag, stream=True, decode=True):
-                            if (is_verbose):
-                                print('{}'.format(resp))
-                            reports.append(resp)
-                        if (is_detailed):
-                            json.dump(reports, fOut, ensure_ascii=True, check_circular=True, allow_nan=True, indent=3, sort_keys=True)
-                    if (not is_detailed):
-                        os.remove(report_filename)
+                    __repo_uri = repo_uri.split('/')[0]
+                    if (not __ecr_docker_login_cache__.get(__repo_uri, False)):
+                        aws_access_token = ecr_client.get_authorization_token()
+                        username, password = base64.b64decode(aws_access_token['authorizationData'][0]['authorizationToken']).decode().split(':')
+                        registry = aws_access_token['authorizationData'][0]['proxyEndpoint']
+                        registry = registry.replace('https://', 'http://')
+                        
+                        cmd = __aws_docker_login__.format(repo_uri.split('/')[0])
+                        logger.info('docker login cmd: "{}"'.format(cmd))
+
+                        resp = docker_client.login(username, password, registry=registry)
+                        assert resp.get('Status') == __expected_aws_docker_login__, 'Cannot login for docker "{}".  Please resolve.'.format(cmd)
+                        __ecr_docker_login_cache__[__repo_uri] = True
+                    
+                    if (not is_dry_run):
+                        cmd = __docker_push_cmd__.format(repo_uri, tag)
+                        logger.info('docker push cmd: "{}"'.format(cmd))
+                        
+                        report_filename = get_ecr_report_fname(repo_uri)
+                        if not os.path.exists(os.path.dirname(report_filename)):
+                            os.makedirs(os.path.dirname(report_filename))
+
+                        with open(report_filename, 'w') as fOut:
+                            reports = []
+                            for resp in docker_client.images.push(repo_uri, tag=tag, stream=True, decode=True):
+                                if (is_verbose):
+                                    print('{}'.format(resp))
+                                reports.append(resp)
+                            if (is_detailed):
+                                json.dump(reports, fOut, ensure_ascii=True, check_circular=True, allow_nan=True, indent=3, sort_keys=True)
+                        if (not is_detailed):
+                            os.remove(report_filename)
             except Exception:
                 logger.error("Fatal error in task", exc_info=True)
                 issues_count += 1
@@ -538,9 +573,10 @@ if (__name__ == '__main__'):
             vector['result'] = True if (issues_count == 0) else False
             return vector
             
-        if (os.path.exists(__docker_config_json__)):
-            logger.info('Removing the docker config: "{}" Reason: This file tends to cause issues with the Auto-ECR Process when it exists.'.format(__docker_config_json__))
-            os.remove(__docker_config_json__)
+        if (not is_dry_run):
+            if (os.path.exists(__docker_config_json__)):
+                logger.info('Removing the docker config: "{}" Reason: This file tends to cause issues with the Auto-ECR Process when it exists.'.format(__docker_config_json__))
+                os.remove(__docker_config_json__)
         
         if (not is_single):
             __max_workers = len(create_the_repos)+1
@@ -568,5 +604,11 @@ if (__name__ == '__main__'):
                 logger.info('main-thread: result: {}'.format(result))
                 logger.info('main-thread: Progress: {} of {} or {:.2%} completed'.format(count_completed, count_started, (count_completed / count_started)))
             logger.info('DONE!!!')
+            
+    if (is_terraform):
+        logger.info('BEGIN: Terraform Processing')
+        from python_terraform import Terraform
+        tf = Terraform(working_dir=__root__)
+        logger.info('END!!! Terraform Processing')
         
     logger.info('"{}" is DONE!'.format(sys.argv[0]))
