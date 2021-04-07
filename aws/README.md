@@ -17,6 +17,9 @@
     - [--scanOnPush](#--scanonpush)
     - [--timetags](#--timetags)
     - [--detailed](#--detailed)
+    - [--terraform](#--terraform)
+    - [--terraform=/dir](#--terraformdir)
+    - [--provider=aws|azure|gcloud](#--providerawsazuregcloud)
   - [Typical Usage(s)](#typical-usages)
     - [Get Help](#get-help)
     - [Push Images (verbose)](#push-images-verbose)
@@ -64,7 +67,7 @@ sudo ./ecr-push-all.sh
 3. Push your Images into ECR by issuing the following command:
 
 ```
-./ecr-push-all.sh [--help] [--verbose] [--push-ecr] [--clean-ecr] [--single] [--scanOnPush] [--timetags] [--detailed]
+./ecr-push-all.sh [--help] [--verbose] [--push-ecr] [--clean-ecr] [--single] [--scanOnPush] [--timetags] [--detailed] [--terraform] [--terraform=/dir] [--provider=aws|azure|gcloud]
 ```
 
 ## Usage
@@ -115,6 +118,24 @@ Appends a pseudo-Timestamp on every Image to force all Images to be pushed even 
 
 ```
 Saves a detailed report for each Image pushed. Detailed reports can be found in the "./aws/automated-ecr/reports" directory.
+```
+
+### --terraform
+
+```
+Performs Terraform processing on the apparent root directory based on the location of any .env files.  If there is no main.tf file present then one will be created otherwise the main.tf file will be used.
+```
+
+### --terraform=/dir
+
+```
+Performs Terraform processing on a directory that must exist.  This allows the user to define the directory where the terraform configuration files reside or where they will be created. If there is no main.tf file present then one will be created otherwise the main.tf file will be used.
+```
+
+### --provider=aws|azure|gcloud
+
+```
+If used this option must appear AFTER the "--terraform" option and must be one of the acceptable options (aws, azure, or gcloud) and if not one of these then 'aws' will be used.
 ```
 
 ## Typical Usage(s)

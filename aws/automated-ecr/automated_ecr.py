@@ -139,7 +139,9 @@ __timetags_command_line_option__ = '--timetags'
 __detailed_ecr_report_command_line_option__ = '--detailed'
 __dryrun_command_line_option__ = '--dryrun'
 __terraform_command_line_option__ = '--terraform' # --terraform=path
+__terraform_provider_command_line_option__ = '--provider=' # [aws|azure|gcloud]
 
+__acceptable_terraform_providers__ = ['aws','azure','gcloud']
 
 def _formatTimeStr():
     return '%Y-%m-%dT%H:%M:%S'
@@ -285,6 +287,7 @@ def get_ecr_report_fname(repo_uri):
     report_filename = '{}{}{}{}{}{}ECR-Report-{}_{}.json'.format('reports', os.sep, base_filename, os.sep, production_token if (is_running_production()) else development_token, os.sep, fname, default_timestamp(datetime.utcnow()))
     return os.sep.join([os.path.dirname(__file__), report_filename])
 
+
 def find_file_in_like(fpath, fname_pattern):
     root = fpath if (os.path.exists(fpath) and os.path.isdir(fpath)) else os.path.dirname(fpath) if (os.path.exists(fpath) and os.path.isfile(fpath)) else None
     assert (is_really_something(root, str)) and os.path.exists(root) and os.path.isdir(root), 'Cannot determine if "{}" is a directory, maybe this is a file.'.format(root)
@@ -293,6 +296,18 @@ def find_file_in_like(fpath, fname_pattern):
             return fp
     return None
     
+
+def parse_complex_command_line_option(argv, find_something=None, sep='=', one_of=None):
+    response = None
+    __options = [arg for arg in argv if (str(arg).find(find_something) > -1)]
+    is_optioned = len(__options) > 0
+    if (is_optioned):
+        response = [t.split(sep)[-1] for t in __options if (t.find(sep) > -1)][0] if (any([t.find(sep) > -1 for t in __options])) else None
+        if (isinstance(one_of, list)):
+            response = response if (response in one_of) else None
+        return response
+    return None
+
 
 if (__name__ == '__main__'):
     terraform_root = None
@@ -307,6 +322,7 @@ if (__name__ == '__main__'):
             #sys.argv.append(__dryrun_command_line_option__)
         sys.argv.append(__verbose_command_line_option__)
         sys.argv.append(__terraform_command_line_option__)
+        sys.argv.append('{}={}'.format(__terraform_provider_command_line_option__, 'aws'))
     
     is_verbose = any([str(arg).find(__verbose_command_line_option__) > -1 for arg in sys.argv])
     if (is_verbose):
@@ -336,15 +352,21 @@ if (__name__ == '__main__'):
     if (is_detailed):
         logger.info('{}'.format(__detailed_ecr_report_command_line_option__))
 
-    terraform_options = [arg for arg in sys.argv if (str(arg).find(__terraform_command_line_option__) > -1)]
-    is_terraform = len(terraform_options) > 0
+    is_terraform = False
+    __terraform_root = parse_complex_command_line_option(sys.argv, find_something=__terraform_command_line_option__)
+    if (is_really_something(__terraform_root, str)):
+        assert (os.path.exists(__terraform_root)), 'Cannot find the directory named "{}".'.format(__terraform_root)
+        is_terraform = True
+        if (os.path.exists(__terraform_root)):
+            terraform_root = __terraform_root if (os.path.isdir(__terraform_root)) else os.path.dirname(__terraform_root)
+        logger.info('terraform: {}{}'.format(__terraform_command_line_option__, ' :: terraform root directory "{}"'.format(terraform_root) if (is_really_something(__terraform_root, str) and os.path.exists(__terraform_root)) else ''))
+
     if (is_terraform):
-        __terraform_root = [t.split('=')[-1] for t in terraform_options if (t.find('=') > -1)][0] if (any([t.find('=') > -1 for t in terraform_options])) else None
-        if (is_really_something(__terraform_root, str)):
-            assert (os.path.exists(__terraform_root)), 'Cannot find the directory named "{}".'.format(__terraform_root)
-            if (os.path.exists(__terraform_root)):
-                terraform_root = __terraform_root if (os.path.isdir(__terraform_root)) else os.path.dirname(__terraform_root)
-        logger.info('{}{}'.format(__terraform_command_line_option__, ' :: terraform root directory "{}"'.format(terraform_root) if (is_really_something(__terraform_root, str) and os.path.exists(__terraform_root)) else ''))
+        __terraform_provider = parse_complex_command_line_option(sys.argv, find_something=__terraform_provider_command_line_option__, one_of=__acceptable_terraform_providers__)
+        if (not is_really_something(__terraform_provider)):
+            __terraform_provider = __acceptable_terraform_providers__[0]
+        assert (is_really_something(__terraform_provider, str)), 'terrform provider is "{}".'.format(__terraform_provider)
+        logger.info('terraform provider: {}'.format(__terraform_provider))
 
 
     is_dry_run = (not is_cleaning_ecr) and (not is_pushing_ecr) and (not is_terraform)
