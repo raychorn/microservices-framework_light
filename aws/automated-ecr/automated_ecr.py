@@ -339,11 +339,12 @@ if (__name__ == '__main__'):
     terraform_options = [arg for arg in sys.argv if (str(arg).find(__terraform_command_line_option__) > -1)]
     is_terraform = len(terraform_options) > 0
     if (is_terraform):
-        __terraform_root = terraform_options[0].split('=')[-1]
-        assert (os.path.exists(__terraform_root)), 'Cannot find the directory named "{}".'.format(__terraform_root)
-        if (os.path.exists(__terraform_root)):
-            terraform_root = __terraform_root if (os.path.isdir(__terraform_root)) else os.path.dirname(__terraform_root)
-        logger.info('{}{}'.format(__terraform_command_line_option__, ' :: terraform root directory "{}"'.format(terraform_root) if (os.path.exists(__terraform_root)) else ''))
+        __terraform_root = [t.split('=')[-1] for t in terraform_options if (t.find('=') > -1)][0] if (any([t.find('=') > -1 for t in terraform_options])) else None
+        if (is_really_something(__terraform_root, str)):
+            assert (os.path.exists(__terraform_root)), 'Cannot find the directory named "{}".'.format(__terraform_root)
+            if (os.path.exists(__terraform_root)):
+                terraform_root = __terraform_root if (os.path.isdir(__terraform_root)) else os.path.dirname(__terraform_root)
+        logger.info('{}{}'.format(__terraform_command_line_option__, ' :: terraform root directory "{}"'.format(terraform_root) if (is_really_something(__terraform_root, str) and os.path.exists(__terraform_root)) else ''))
 
 
     is_dry_run = (not is_cleaning_ecr) and (not is_pushing_ecr) and (not is_terraform)
@@ -369,24 +370,25 @@ if (__name__ == '__main__'):
     __aws_creds_src__ = find_aws_creds_or_config_src(__aws_creds_src__)
     __aws_config_src__ = find_aws_creds_or_config_src(__aws_config_src__)
     
-    logger.info('Checking for aws creds.')
-    resp = handle_aws_creds_or_config(__aws_creds_src__, target=aws_creds) # , dest=__aws_creds_dest__
+    if (is_pushing_ecr or is_cleaning_ecr):
+        logger.info('Checking for aws creds.')
+        resp = handle_aws_creds_or_config(__aws_creds_src__, target=aws_creds) # , dest=__aws_creds_dest__
 
-    logger.info('Checking for aws config.')
-    resp = handle_aws_creds_or_config(__aws_config_src__, target=aws_config) # , dest=__aws_config_dest__
+        logger.info('Checking for aws config.')
+        resp = handle_aws_creds_or_config(__aws_config_src__, target=aws_config) # , dest=__aws_config_dest__
 
-    __aws_access_key_id = aws_creds.get(list(aws_creds.keys())[0], {}).get('aws_access_key_id')
-    assert is_really_something(__aws_access_key_id, str), 'Missing the aws_access_key_id, check your config files.'
+        __aws_access_key_id = aws_creds.get(list(aws_creds.keys())[0], {}).get('aws_access_key_id')
+        assert is_really_something(__aws_access_key_id, str), 'Missing the aws_access_key_id, check your config files.'
+        
+        __aws_secret_access_key = aws_creds.get(list(aws_creds.keys())[0], {}).get('aws_secret_access_key')
+        assert is_really_something(__aws_secret_access_key, str), 'Missing the aws_secret_access_key, check your config files.'
     
-    __aws_secret_access_key = aws_creds.get(list(aws_creds.keys())[0], {}).get('aws_secret_access_key')
-    assert is_really_something(__aws_secret_access_key, str), 'Missing the aws_secret_access_key, check your config files.'
-    
-    ecr_client = boto3.client(
-        'ecr',
-        aws_access_key_id=__aws_access_key_id,
-        aws_secret_access_key=__aws_secret_access_key,
-        region_name=aws_config.get(list(aws_config.keys())[0], {}).get('region', 'us-east-2')
-    )        
+        ecr_client = boto3.client(
+            'ecr',
+            aws_access_key_id=__aws_access_key_id,
+            aws_secret_access_key=__aws_secret_access_key,
+            region_name=aws_config.get(list(aws_config.keys())[0], {}).get('region', 'us-east-2')
+        )        
 
     if (is_pushing_ecr):
         import docker
@@ -439,10 +441,11 @@ if (__name__ == '__main__'):
             assert len(id_to_name) > 0, 'There are no docker images to handle and nothing more to do.  Please resolve if you wanted to ECR some Docker Images.'
             logger.info('There are {} docker images.'.format(len(id_to_name)))
     
-    logger.info('{}'.format(' '.join(__aws_cli_ecr_describe_repos__)))
-    response = ecr_client.describe_repositories()
-    assert 'repositories' in response.keys(), 'Cannot "{}".  Please resolve.'.format(__aws_cli_ecr_describe_repos__)
-    the_repositories = response.get('repositories', [])
+    if (is_pushing_ecr or is_cleaning_ecr):
+        logger.info('{}'.format(' '.join(__aws_cli_ecr_describe_repos__)))
+        response = ecr_client.describe_repositories()
+        assert 'repositories' in response.keys(), 'Cannot "{}".  Please resolve.'.format(__aws_cli_ecr_describe_repos__)
+        the_repositories = response.get('repositories', [])
     
     if (is_cleaning_ecr): 
         if (len(the_repositories)):
@@ -608,7 +611,9 @@ if (__name__ == '__main__'):
     if (is_terraform):
         logger.info('BEGIN: Terraform Processing')
         from python_terraform import Terraform
-        tf = Terraform(working_dir=__root__)
+        tf = Terraform(working_dir=terraform_root)
+        resp = tf.init(backend=True)
+        logger.info('terraform init -> {}'.format(' '.join([str(r).replace('\n', ' ').strip() for r in resp])))
         logger.info('END!!! Terraform Processing')
         
     logger.info('"{}" is DONE!'.format(sys.argv[0]))
