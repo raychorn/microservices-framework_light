@@ -140,7 +140,8 @@ __timetags_command_line_option__ = '--timetags'
 __detailed_ecr_report_command_line_option__ = '--detailed'
 __dryrun_command_line_option__ = '--dryrun'
 __terraform_command_line_option__ = '--terraform' # --terraform=path
-__terraform_provider_command_line_option__ = '--provider=' # [aws|azure|gcloud]
+__terraform_provider_command_line_option__ = '--provider' # [aws|azure|gcloud]
+__aws_ecs_cluster__ = "--aws_ecs_cluster" # must specify a cluster name
 
 __acceptable_terraform_providers__ = ['aws','azure','gcloud']
 
@@ -332,6 +333,7 @@ if (__name__ == '__main__'):
         sys.argv.append(__terraform_command_line_option__)
         #sys.argv.append('{}={}'.format(__terraform_command_line_option__, '/tmp'))
         sys.argv.append('{}={}'.format(__terraform_provider_command_line_option__, 'aws'))
+        sys.argv.append('{}={}'.format(__terraform_provider_command_line_option__, 'aws'))
     
     is_verbose = any([str(arg).find(__verbose_command_line_option__) > -1 for arg in sys.argv])
     if (is_verbose):
@@ -375,8 +377,15 @@ if (__name__ == '__main__'):
         __terraform_provider_flag, __terraform_provider = parse_complex_command_line_option(sys.argv, find_something=__terraform_provider_command_line_option__, one_of=__acceptable_terraform_providers__)
         if (not is_really_something(__terraform_provider, str)):
             __terraform_provider = __acceptable_terraform_providers__[0]
-        assert (is_really_something(__terraform_provider, str)), 'terrform provider is "{}".'.format(__terraform_provider)
+        assert (is_really_something(__terraform_provider, str)), 'Missing terrform provider.'
+        assert (is_really_something(__terraform_provider_flag, str)), 'Missing terraform provider flag and this is a programming issue.'
         logger.info('terraform provider: {}'.format(__terraform_provider))
+        
+    if (is_terraform):
+        __aws_ecs_cluster_flag, __aws_ecs_cluster_name = parse_complex_command_line_option(sys.argv, find_something=__aws_ecs_cluster__)
+        assert (is_really_something(__aws_ecs_cluster_name, str)), 'Missing terrform aws_ecs_cluster.'
+        assert (is_really_something(__aws_ecs_cluster_flag, str)), 'Missing terraform aws ecs cluster flag and this is a programming issue.'
+        logger.info('terraform aws_ecs_cluster is : {}'.format(__aws_ecs_cluster_name))
 
 
     is_dry_run = (not is_cleaning_ecr) and (not is_pushing_ecr) and (not is_terraform)
@@ -669,6 +678,11 @@ if (__name__ == '__main__'):
             print('provider "%s" {' % (__terraform_provider), file=fOut)
             print('    region  = "{}"'.format(aws_config.get(list(aws_config.keys())[0], {}).get('region', __aws_default_region__)), file=fOut)
             print('}\n', file=fOut)
+
+            if ((is_really_something(__aws_ecs_cluster_flag, str))):
+                print('resource "aws_ecs_cluster" "%s" {' % (__aws_ecs_cluster_name), file=fOut)
+                print('  name = "%s"' % (__aws_ecs_cluster_name), file=fOut)
+                print('}\n', file=fOut)
         
         logger.info('terraform init -> {}'.format(' '.join([str(r).replace('\n', ' ').strip() for r in resp])))
         logger.info('END!!! Terraform Processing')

@@ -21,6 +21,7 @@
     - [--terraform](#--terraform)
     - [--terraform=/dir](#--terraformdir)
     - [--provider=aws|azure|gcloud](#--providerawsazuregcloud)
+    - [--aws_ecs_cluster=cluster-name](#--aws_ecs_clustercluster-name)
   - [Typical Usage(s)](#typical-usages)
     - [Get Help](#get-help)
     - [Push Images (verbose)](#push-images-verbose)
@@ -72,7 +73,7 @@ sudo ./ecr-push-all.sh
 3. Push your Images into ECR by issuing the following command:
 
 ```
-./ecr-push-all.sh [--help] [--verbose] [--push-ecr] [--clean-ecr] [--single] [--scanOnPush] [--timetags] [--detailed] [--terraform] [--terraform=/dir] [--provider=aws|azure|gcloud]
+./ecr-push-all.sh [--help] [--verbose] [--push-ecr] [--clean-ecr] [--single] [--scanOnPush] [--timetags] [--detailed] [--terraform] [--terraform=/dir] [--provider=aws|azure|gcloud] [--aws_ecs_cluster=cluster-name]
 ```
 
 ## Usage
@@ -143,6 +144,12 @@ The main.tf file will be created in the ./terraform directory which will either 
 
 ```
 If used this option must appear AFTER the "--terraform" option and must be one of the acceptable options (aws, azure, or gcloud) and if not one of these then 'aws' will be used.
+```
+
+### --aws_ecs_cluster=cluster-name
+
+```
+If used this option must appear AFTER the "--terraform" option and must identify the name for the ECS cluster.
 ```
 
 ## Typical Usage(s)
