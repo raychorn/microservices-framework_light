@@ -6,6 +6,7 @@
   - [Table of Contents](#table-of-contents)
   - [About](#about)
   - [Getting Started](#getting-started)
+    - [Terraform Support](#terraform-support)
     - [Prerequisites](#prerequisites)
   - [Installing](#installing)
   - [Usage](#usage)
@@ -34,7 +35,11 @@ Automates the Docker Push for AWS ECR via git bash for Windows 10. This assumes 
 
 ## Getting Started
 
-Not gonna work in Windows via "git bash"
+Not gonna work in Windows via "git bash".
+
+### Terraform Support
+
+The Terraform Automation builds the main.tf file which you can use to do a "terraform apply" to repeat the deployment however every time the terraform automation runs it will rebuild and reapply the main.tf file. (See the script named "./scripts/terraform-cli-installer.sh" to install the terraform command line which is done automatically when you run the terraform automation.)
 
 ### Prerequisites
 
@@ -130,6 +135,8 @@ Performs Terraform processing on the apparent root directory based on the locati
 
 ```
 Performs Terraform processing on a directory that must exist.  This allows the user to define the directory where the terraform configuration files reside or where they will be created. If there is no main.tf file present then one will be created otherwise the main.tf file will be used.
+
+The main.tf file will be created in the ./terraform directory which will either be the directory you supply as the optional directory for the "--terraform" command line option or it will be defined by the presence of the ".env" file which generally appears in the project root.  If you want to control where the main.tf file lands then define the directory when you issue the "--terraform=./dir" command line option. Please note the directory you use with this option must exist.
 ```
 
 ### --provider=aws|azure|gcloud

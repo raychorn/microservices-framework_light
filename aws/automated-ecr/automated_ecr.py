@@ -123,6 +123,7 @@ id_to_name = {}
 response_vectors = {}
 
 current_aws_creds = {}
+current_aws_config = {}
 
 response_content = []
 
@@ -142,6 +143,9 @@ __terraform_command_line_option__ = '--terraform' # --terraform=path
 __terraform_provider_command_line_option__ = '--provider=' # [aws|azure|gcloud]
 
 __acceptable_terraform_providers__ = ['aws','azure','gcloud']
+
+__terraform_directory__ = 'terraform'
+__aws_default_region__ = 'us-east-2'
 
 def _formatTimeStr():
     return '%Y-%m-%dT%H:%M:%S'
@@ -302,11 +306,15 @@ def parse_complex_command_line_option(argv, find_something=None, sep='=', one_of
     __options = [arg for arg in argv if (str(arg).find(find_something) > -1)]
     is_optioned = len(__options) > 0
     if (is_optioned):
-        response = [t.split(sep)[-1] for t in __options if (t.find(sep) > -1)][0] if (any([t.find(sep) > -1 for t in __options])) else None
-        if (isinstance(one_of, list)):
-            response = response if (response in one_of) else None
-        return response
-    return None
+        if (any([t.find(sep) > -1 for t in __options])):
+            response, option = tuple([[tt for tt in t.split(sep) if (len(tt) > 0)] for t in __options if (t.find(sep) > -1)][0])
+            if (isinstance(one_of, list)):
+                option = option if (response in one_of) else one_of[0]
+            return response, option
+        else:
+            response = __options[0]
+        return response, None
+    return None, None
 
 
 if (__name__ == '__main__'):
@@ -322,6 +330,7 @@ if (__name__ == '__main__'):
             #sys.argv.append(__dryrun_command_line_option__)
         sys.argv.append(__verbose_command_line_option__)
         sys.argv.append(__terraform_command_line_option__)
+        #sys.argv.append('{}={}'.format(__terraform_command_line_option__, '/tmp'))
         sys.argv.append('{}={}'.format(__terraform_provider_command_line_option__, 'aws'))
     
     is_verbose = any([str(arg).find(__verbose_command_line_option__) > -1 for arg in sys.argv])
@@ -353,17 +362,18 @@ if (__name__ == '__main__'):
         logger.info('{}'.format(__detailed_ecr_report_command_line_option__))
 
     is_terraform = False
-    __terraform_root = parse_complex_command_line_option(sys.argv, find_something=__terraform_command_line_option__)
+    __terraform_flag, __terraform_root = parse_complex_command_line_option(sys.argv, find_something=__terraform_command_line_option__)
+    is_terraform = is_really_something(__terraform_flag, str)
     if (is_really_something(__terraform_root, str)):
         assert (os.path.exists(__terraform_root)), 'Cannot find the directory named "{}".'.format(__terraform_root)
-        is_terraform = True
         if (os.path.exists(__terraform_root)):
             terraform_root = __terraform_root if (os.path.isdir(__terraform_root)) else os.path.dirname(__terraform_root)
+    if (is_terraform):
         logger.info('terraform: {}{}'.format(__terraform_command_line_option__, ' :: terraform root directory "{}"'.format(terraform_root) if (is_really_something(__terraform_root, str) and os.path.exists(__terraform_root)) else ''))
 
     if (is_terraform):
-        __terraform_provider = parse_complex_command_line_option(sys.argv, find_something=__terraform_provider_command_line_option__, one_of=__acceptable_terraform_providers__)
-        if (not is_really_something(__terraform_provider)):
+        __terraform_provider_flag, __terraform_provider = parse_complex_command_line_option(sys.argv, find_something=__terraform_provider_command_line_option__, one_of=__acceptable_terraform_providers__)
+        if (not is_really_something(__terraform_provider, str)):
             __terraform_provider = __acceptable_terraform_providers__[0]
         assert (is_really_something(__terraform_provider, str)), 'terrform provider is "{}".'.format(__terraform_provider)
         logger.info('terraform provider: {}'.format(__terraform_provider))
@@ -385,32 +395,42 @@ if (__name__ == '__main__'):
     __root__ = find_dotenv()
     if (os.path.exists(__root__)):
         __root__ = os.path.dirname(__root__)
-        if (not is_really_something(terraform_root, str)):
-            terraform_root = __root__
-    logger.info('Found .env file here "{}".'.format(__root__))
+        if (not is_really_something(terraform_root, str)) or (not os.path.exists(terraform_root)):
+            logger.info('Found .env file here "{}" and no terraform directory was specified.'.format(__root__))
+            terraform_root = os.sep.join([__root__, __terraform_directory__])
+            logger.info('The terraform root is now "{}" and this is where you will find the terraform files.'.format(terraform_root))
+            if (not os.path.exists(terraform_root)):
+                os.mkdir(terraform_root)
+                logger.info('The terraform root "{}" has been created.'.format(terraform_root))
     
     __aws_creds_src__ = find_aws_creds_or_config_src(__aws_creds_src__)
     __aws_config_src__ = find_aws_creds_or_config_src(__aws_config_src__)
     
-    if (is_pushing_ecr or is_cleaning_ecr):
-        logger.info('Checking for aws creds.')
-        resp = handle_aws_creds_or_config(__aws_creds_src__, target=aws_creds) # , dest=__aws_creds_dest__
+    if (is_pushing_ecr or is_cleaning_ecr or is_terraform):
+        if (is_pushing_ecr or is_cleaning_ecr):
+            logger.info('Checking for aws creds.')
+            resp = handle_aws_creds_or_config(__aws_creds_src__, target=aws_creds) # , dest=__aws_creds_dest__
 
         logger.info('Checking for aws config.')
         resp = handle_aws_creds_or_config(__aws_config_src__, target=aws_config) # , dest=__aws_config_dest__
-
-        __aws_access_key_id = aws_creds.get(list(aws_creds.keys())[0], {}).get('aws_access_key_id')
-        assert is_really_something(__aws_access_key_id, str), 'Missing the aws_access_key_id, check your config files.'
         
-        __aws_secret_access_key = aws_creds.get(list(aws_creds.keys())[0], {}).get('aws_secret_access_key')
-        assert is_really_something(__aws_secret_access_key, str), 'Missing the aws_secret_access_key, check your config files.'
+        __d = aws_config.get(list(aws_config.keys())[0], {})
+        __d['region'] = __d.get('region', __aws_default_region__)
+        aws_config[list(aws_config.keys())[0]] = __d
+        
+        if (is_pushing_ecr or is_cleaning_ecr):
+            __aws_access_key_id = aws_creds.get(list(aws_creds.keys())[0], {}).get('aws_access_key_id')
+            assert is_really_something(__aws_access_key_id, str), 'Missing the aws_access_key_id, check your config files.'
+        
+            __aws_secret_access_key = aws_creds.get(list(aws_creds.keys())[0], {}).get('aws_secret_access_key')
+            assert is_really_something(__aws_secret_access_key, str), 'Missing the aws_secret_access_key, check your config files.'
     
-        ecr_client = boto3.client(
-            'ecr',
-            aws_access_key_id=__aws_access_key_id,
-            aws_secret_access_key=__aws_secret_access_key,
-            region_name=aws_config.get(list(aws_config.keys())[0], {}).get('region', 'us-east-2')
-        )        
+            ecr_client = boto3.client(
+                'ecr',
+                aws_access_key_id=__aws_access_key_id,
+                aws_secret_access_key=__aws_secret_access_key,
+                region_name=aws_config.get(list(aws_config.keys())[0], {}).get('region', __aws_default_region__)
+            )        
 
     if (is_pushing_ecr):
         import docker
@@ -632,9 +652,24 @@ if (__name__ == '__main__'):
             
     if (is_terraform):
         logger.info('BEGIN: Terraform Processing')
+        assert os.path.exists(terraform_root), 'Missing the terraform root directory which means something went horribly wrong so cannot proceed.'
+        
         from python_terraform import Terraform
         tf = Terraform(working_dir=terraform_root)
         resp = tf.init(backend=True)
+        
+        __terraform_main_tf = os.sep.join([terraform_root, 'main.tf'])
+        with open(__terraform_main_tf, 'w') as fOut:
+            '''
+                provider "aws" {
+                version = "~> 2.0"
+                region  = "eu-west-2" # Setting my region to London. Use your own region here
+                }
+            '''
+            print('provider "{}" {\n'.format(__terraform_provider), file=fOut)
+            print('version = "~> 2.0"\n', file=fOut)
+            print('region  = "{}"\n'.format(aws_config.get(list(aws_config.keys())[0], {}).get('region', __aws_default_region__)), file=fOut)
+        
         logger.info('terraform init -> {}'.format(' '.join([str(r).replace('\n', ' ').strip() for r in resp])))
         logger.info('END!!! Terraform Processing')
         
