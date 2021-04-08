@@ -9,6 +9,8 @@ __pycache__/
 docker/mongodb/data/db/
 aws/.aws/credentials
 
+terraform/
+
 # Distribution / packaging
 .Python
 build/

@@ -662,13 +662,13 @@ if (__name__ == '__main__'):
         with open(__terraform_main_tf, 'w') as fOut:
             '''
                 provider "aws" {
-                version = "~> 2.0"
+                version = "~> 2.0" (this line has been deprecated.)
                 region  = "eu-west-2" # Setting my region to London. Use your own region here
                 }
             '''
-            print('provider "{}" {\n'.format(__terraform_provider), file=fOut)
-            print('version = "~> 2.0"\n', file=fOut)
-            print('region  = "{}"\n'.format(aws_config.get(list(aws_config.keys())[0], {}).get('region', __aws_default_region__)), file=fOut)
+            print('provider "%s" {' % (__terraform_provider), file=fOut)
+            print('    region  = "{}"'.format(aws_config.get(list(aws_config.keys())[0], {}).get('region', __aws_default_region__)), file=fOut)
+            print('}\n', file=fOut)
         
         logger.info('terraform init -> {}'.format(' '.join([str(r).replace('\n', ' ').strip() for r in resp])))
         logger.info('END!!! Terraform Processing')
