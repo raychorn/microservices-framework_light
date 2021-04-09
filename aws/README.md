@@ -5,6 +5,7 @@
 - [Automated ECR for AWS Projects](#automated-ecr-for-aws-projects)
   - [Table of Contents](#table-of-contents)
   - [About](#about)
+    - [docker-compose ECS Integration](#docker-compose-ecs-integration)
   - [Getting Started](#getting-started)
     - [Terraform Support](#terraform-support)
     - [Prerequisites](#prerequisites)
@@ -33,6 +34,10 @@
 ## About
 
 Automates the Docker Push for AWS ECR via git bash for Windows 10. This assumes your paths are setup correctly.
+
+### docker-compose ECS Integration
+
+[Docker Compose ECS Integration](https://docs.docker.com/cloud/ecs-integration/)
 
 ## Getting Started
 

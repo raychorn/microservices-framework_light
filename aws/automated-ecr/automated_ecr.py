@@ -333,7 +333,7 @@ if (__name__ == '__main__'):
         sys.argv.append(__terraform_command_line_option__)
         #sys.argv.append('{}={}'.format(__terraform_command_line_option__, '/tmp'))
         sys.argv.append('{}={}'.format(__terraform_provider_command_line_option__, 'aws'))
-        sys.argv.append('{}={}'.format(__terraform_provider_command_line_option__, 'aws'))
+        sys.argv.append('{}={}'.format(__aws_ecs_cluster__, 'my_cluster1'))
     
     is_verbose = any([str(arg).find(__verbose_command_line_option__) > -1 for arg in sys.argv])
     if (is_verbose):
@@ -380,12 +380,12 @@ if (__name__ == '__main__'):
         assert (is_really_something(__terraform_provider, str)), 'Missing terrform provider.'
         assert (is_really_something(__terraform_provider_flag, str)), 'Missing terraform provider flag and this is a programming issue.'
         logger.info('terraform provider: {}'.format(__terraform_provider))
-        
+
     if (is_terraform):
         __aws_ecs_cluster_flag, __aws_ecs_cluster_name = parse_complex_command_line_option(sys.argv, find_something=__aws_ecs_cluster__)
-        assert (is_really_something(__aws_ecs_cluster_name, str)), 'Missing terrform aws_ecs_cluster.'
-        assert (is_really_something(__aws_ecs_cluster_flag, str)), 'Missing terraform aws ecs cluster flag and this is a programming issue.'
-        logger.info('terraform aws_ecs_cluster is : {}'.format(__aws_ecs_cluster_name))
+        if (is_really_something(__aws_ecs_cluster_flag, str)):
+            assert (is_really_something(__aws_ecs_cluster_name, str)), 'Missing terrform aws_ecs_cluster.'
+            logger.info('terraform aws_ecs_cluster is : {}'.format(__aws_ecs_cluster_name))
 
 
     is_dry_run = (not is_cleaning_ecr) and (not is_pushing_ecr) and (not is_terraform)
@@ -671,9 +671,13 @@ if (__name__ == '__main__'):
         with open(__terraform_main_tf, 'w') as fOut:
             '''
                 provider "aws" {
-                version = "~> 2.0" (this line has been deprecated.)
-                region  = "eu-west-2" # Setting my region to London. Use your own region here
+                    version = "~> 2.0" (this line has been deprecated.)
+                    region  = "eu-west-2" # this comes from the aws config files.
                 }
+                
+                resource "aws_ecs_cluster" "my_cluster" {
+                    name = "my-cluster" # Naming the cluster
+                }                
             '''
             print('provider "%s" {' % (__terraform_provider), file=fOut)
             print('    region  = "{}"'.format(aws_config.get(list(aws_config.keys())[0], {}).get('region', __aws_default_region__)), file=fOut)
