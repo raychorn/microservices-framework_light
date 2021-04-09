@@ -141,12 +141,15 @@ __detailed_ecr_report_command_line_option__ = '--detailed'
 __dryrun_command_line_option__ = '--dryrun'
 __terraform_command_line_option__ = '--terraform' # --terraform=path
 __terraform_provider_command_line_option__ = '--provider' # [aws|azure|gcloud]
-__aws_ecs_cluster__ = "--aws_ecs_cluster" # must specify a cluster name
+__aws_ecs_cluster_command_line_option__ = "--aws_ecs_cluster" # must specify a cluster name
+__docker_command_line_option__ = "--docker" # must specify a path for terraform processing
 
 __acceptable_terraform_providers__ = ['aws','azure','gcloud']
 
 __terraform_directory__ = 'terraform'
 __aws_default_region__ = 'us-east-2'
+
+__docker_compose_filename__ = 'docker-compose.yml'
 
 def _formatTimeStr():
     return '%Y-%m-%dT%H:%M:%S'
@@ -318,6 +321,26 @@ def parse_complex_command_line_option(argv, find_something=None, sep='=', one_of
     return None, None
 
 
+def load_docker_compose(fpath):
+    import yaml
+    
+    with open(fpath, 'r') as stream:
+        try:
+            return yaml.safe_load(stream)
+        except yaml.YAMLError as exc:
+            logger.error("Fatal error reading docker-compose file.", exc_info=True)
+    return None
+
+
+def save_docker_compose_data(fpath, the_json):
+    assert (is_really_something(fpath)), 'Missing the directory where you want to store the json.'
+    assert (is_really_something(the_json)), 'Missing the json content.'
+    fp = fpath if (fpath.find('.json') > -1) else os.sep.join([os.path.dirname(os.path.dirname(fpath)), '{}-yaml.json'.format(os.path.basename(fpath))])
+    with open(fp, 'w') as fOut:
+        print(the_json, file=fOut)
+    logger.info('Saved json content in "{}".'.format(fp))
+
+
 if (__name__ == '__main__'):
     terraform_root = None
 
@@ -333,7 +356,8 @@ if (__name__ == '__main__'):
         sys.argv.append(__terraform_command_line_option__)
         #sys.argv.append('{}={}'.format(__terraform_command_line_option__, '/tmp'))
         sys.argv.append('{}={}'.format(__terraform_provider_command_line_option__, 'aws'))
-        sys.argv.append('{}={}'.format(__aws_ecs_cluster__, 'my_cluster1'))
+        sys.argv.append('{}={}'.format(__aws_ecs_cluster_command_line_option__, 'my_cluster1'))
+        sys.argv.append('{}={}'.format(__docker_command_line_option__, '/home/raychorn/projects/python-projects/securex.ai/data/docker'))
     
     is_verbose = any([str(arg).find(__verbose_command_line_option__) > -1 for arg in sys.argv])
     if (is_verbose):
@@ -382,10 +406,19 @@ if (__name__ == '__main__'):
         logger.info('terraform provider: {}'.format(__terraform_provider))
 
     if (is_terraform):
-        __aws_ecs_cluster_flag, __aws_ecs_cluster_name = parse_complex_command_line_option(sys.argv, find_something=__aws_ecs_cluster__)
-        if (is_really_something(__aws_ecs_cluster_flag, str)):
-            assert (is_really_something(__aws_ecs_cluster_name, str)), 'Missing terrform aws_ecs_cluster.'
-            logger.info('terraform aws_ecs_cluster is : {}'.format(__aws_ecs_cluster_name))
+        __aws_ecs_cluster_flag, __aws_ecs_cluster_name = parse_complex_command_line_option(sys.argv, find_something=__aws_ecs_cluster_command_line_option__)
+        assert (is_really_something(__aws_ecs_cluster_name, str)), 'Missing terrform aws_ecs_cluster.'
+        logger.info('terraform aws_ecs_cluster is : {}'.format(__aws_ecs_cluster_name))
+            
+    if (is_terraform):
+        __docker_flag, __docker_root = parse_complex_command_line_option(sys.argv, find_something=__docker_command_line_option__)
+        assert (is_really_something(__docker_flag, str)), 'Missing terrform docker command line option.'
+        assert (is_really_something(__docker_root, str)), 'Missing terrform docker path.'
+        assert (os.path.exists(__docker_root) and os.path.isdir(__docker_root)), 'Cannot find terrform docker path (this is the location of your docker files).'
+        __docker_compose_location = os.sep.join([__docker_root, __docker_compose_filename__])
+        assert (os.path.exists(__docker_compose_location) and os.path.isfile(__docker_compose_location)), 'Cannot find terrform docker-compose file (Please place your "{}" in the "{}" directory).'.format(__docker_compose_filename__, __docker_root)
+        logger.info('terraform docker path is : {}'.format(__docker_root))
+        logger.info('terraform docker-dompose file is : {}'.format(__docker_compose_location))
 
 
     is_dry_run = (not is_cleaning_ecr) and (not is_pushing_ecr) and (not is_terraform)
@@ -666,6 +699,11 @@ if (__name__ == '__main__'):
         from python_terraform import Terraform
         tf = Terraform(working_dir=terraform_root)
         resp = tf.init(backend=True)
+
+        logger.info('BEGIN: Reading "{}".'.format(__docker_compose_location))        
+        docker_compose_data = load_docker_compose(__docker_compose_location)
+        __json = json.dumps(docker_compose_data, indent=3)
+        logger.info('END!!! Reading "{}".'.format(__docker_compose_location))        
         
         __terraform_main_tf = os.sep.join([terraform_root, 'main.tf'])
         with open(__terraform_main_tf, 'w') as fOut:
