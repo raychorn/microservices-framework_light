@@ -23,6 +23,7 @@
     - [--terraform=/dir](#--terraformdir)
     - [--provider=aws|azure|gcloud](#--providerawsazuregcloud)
     - [--aws_ecs_cluster=cluster-name](#--aws_ecs_clustercluster-name)
+    - [--json](#--json)
   - [Typical Usage(s)](#typical-usages)
     - [Get Help](#get-help)
     - [Push Images (verbose)](#push-images-verbose)
@@ -78,7 +79,7 @@ sudo ./ecr-push-all.sh
 3. Push your Images into ECR by issuing the following command:
 
 ```
-./ecr-push-all.sh [--help] [--verbose] [--push-ecr] [--clean-ecr] [--single] [--scanOnPush] [--timetags] [--detailed] [--terraform] [--terraform=/dir] [--provider=aws|azure|gcloud] [--aws_ecs_cluster=cluster-name]
+./ecr-push-all.sh [--help] [--verbose] [--push-ecr] [--clean-ecr] [--single] [--scanOnPush] [--timetags] [--detailed] [--terraform] [--terraform=/dir] [--provider=aws|azure|gcloud] [--aws_ecs_cluster=cluster-name] [--json]
 ```
 
 ## Usage
@@ -155,6 +156,12 @@ If used this option must appear AFTER the "--terraform" option and must be one o
 
 ```
 If used this option must appear AFTER the "--terraform" option and must identify the name for the ECS cluster.
+```
+
+### --json
+
+```
+If used this option must appear AFTER the "--terraform" option and saves the docker-compose.yml file as json in the same directory as the source file (for debugging purposes only).
 ```
 
 ## Typical Usage(s)

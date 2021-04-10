@@ -62,6 +62,7 @@ production_token = 'production'
 development_token = 'development'
 
 is_really_something = lambda s,t:(s is not None) and t(s)
+is_really_something_with_stuff = lambda s,t:is_really_something(s,t) and (len(s) > 0)
 something_greater_than_zero = lambda s:(s > 0)
 default_timestamp = lambda t:t.isoformat().replace(':', '').replace('-','').split('.')[0]
 is_running_production = lambda : (socket.gethostname() != 'DESKTOP-JJ95ENL')
@@ -143,6 +144,7 @@ __terraform_command_line_option__ = '--terraform' # --terraform=path
 __terraform_provider_command_line_option__ = '--provider' # [aws|azure|gcloud]
 __aws_ecs_cluster_command_line_option__ = "--aws_ecs_cluster" # must specify a cluster name
 __docker_command_line_option__ = "--docker" # must specify a path for terraform processing
+__json_command_line_option__ = "--json"
 
 __acceptable_terraform_providers__ = ['aws','azure','gcloud']
 
@@ -341,6 +343,48 @@ def save_docker_compose_data(fpath, the_json):
     logger.info('Saved json content in "{}".'.format(fp))
 
 
+def get_container_definitions_from(data):
+    '''
+        [
+            {
+            "name": "my-first-task",
+            "image": "${aws_ecr_repository.my_first_ecr_repo.repository_url}",
+            "essential": true,
+            "portMappings": [
+                {
+                "containerPort": 3000,
+                "hostPort": 3000
+                }
+            ],
+            "memory": 512,
+            "cpu": 256
+            }
+        ]
+    '''
+    container_defs = []
+    services = data.get('services', {})
+    assert len(services) > 0, 'Missing services so cannot get the container_definitions.'
+    for svc_name, svc in services.items():
+        container_def = {}
+        __name = svc.get('container_name')
+        assert is_really_something(__name, str), 'Missing the container_name from a service named "{}".'.format(svc_name)
+        __image = svc.get('image')
+        assert is_really_something(__image, str), 'Missing the image from a service named "{}".'.format(svc_name)
+        __ports = svc.get('ports')
+        assert is_really_something(__ports, str), 'Missing the ports from a service named "{}".'.format(svc_name)
+        __deploy = svc.get('deploy', {})
+        __deploy_resources = __deploy.get('resources', {})
+        __deploy_resources_limits = __deploy_resources.get('limits', {})
+        assert is_really_something_with_stuff(__deploy, dict), 'Missing the deploy from a service named "{}".'.format(svc_name)
+        assert is_really_something_with_stuff(__deploy_resources, dict), 'Missing the deploy resources from a service named "{}".'.format(svc_name)
+        assert is_really_something_with_stuff(__deploy_resources_limits, dict), 'Missing the deploy resources limits from a service named "{}".'.format(svc_name)
+        __cpus = eval(__deploy_resources_limits.get('cpus', '0.0'))
+        assert is_really_something(__cpus, float), 'Missing the cpus or its not a numeric value from a service named "{}".'.format(svc_name)
+        __memory = __deploy_resources_limits.get('memory')
+        assert is_really_something(__memory, str), 'Missing the memory from a service named "{}".'.format(svc_name)
+    return container_defs
+
+
 if (__name__ == '__main__'):
     terraform_root = None
 
@@ -358,6 +402,7 @@ if (__name__ == '__main__'):
         sys.argv.append('{}={}'.format(__terraform_provider_command_line_option__, 'aws'))
         sys.argv.append('{}={}'.format(__aws_ecs_cluster_command_line_option__, 'my_cluster1'))
         sys.argv.append('{}={}'.format(__docker_command_line_option__, '/home/raychorn/projects/python-projects/securex.ai/data/docker'))
+        #sys.argv.append(__json_command_line_option__)
     
     is_verbose = any([str(arg).find(__verbose_command_line_option__) > -1 for arg in sys.argv])
     if (is_verbose):
@@ -419,6 +464,10 @@ if (__name__ == '__main__'):
         assert (os.path.exists(__docker_compose_location) and os.path.isfile(__docker_compose_location)), 'Cannot find terrform docker-compose file (Please place your "{}" in the "{}" directory).'.format(__docker_compose_filename__, __docker_root)
         logger.info('terraform docker path is : {}'.format(__docker_root))
         logger.info('terraform docker-dompose file is : {}'.format(__docker_compose_location))
+        
+    is_json = any([str(arg).find(__json_command_line_option__) > -1 for arg in sys.argv])
+    if (is_json):
+        logger.info('{}'.format(__json_command_line_option__))
 
 
     is_dry_run = (not is_cleaning_ecr) and (not is_pushing_ecr) and (not is_terraform)
@@ -702,8 +751,10 @@ if (__name__ == '__main__'):
 
         logger.info('BEGIN: Reading "{}".'.format(__docker_compose_location))        
         docker_compose_data = load_docker_compose(__docker_compose_location)
-        __json = json.dumps(docker_compose_data, indent=3)
-        save_docker_compose_data(__docker_compose_location, __json)
+        if (is_json):
+            __json = json.dumps(docker_compose_data, indent=3)
+            save_docker_compose_data(__docker_compose_location, __json)
+        container_definitions = get_container_definitions_from(docker_compose_data)
         logger.info('END!!! Reading "{}".'.format(__docker_compose_location))
         
         __terraform_main_tf = os.sep.join([terraform_root, 'main.tf'])
