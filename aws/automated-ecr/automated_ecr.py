@@ -333,9 +333,9 @@ def load_docker_compose(fpath):
 
 
 def save_docker_compose_data(fpath, the_json):
-    assert (is_really_something(fpath)), 'Missing the directory where you want to store the json.'
-    assert (is_really_something(the_json)), 'Missing the json content.'
-    fp = fpath if (fpath.find('.json') > -1) else os.sep.join([os.path.dirname(os.path.dirname(fpath)), '{}-yaml.json'.format(os.path.basename(fpath))])
+    assert (is_really_something(fpath, str)), 'Missing the directory where you want to store the json.'
+    assert (is_really_something(the_json, str)), 'Missing the json content.'
+    fp = fpath if (fpath.find('.json') > -1) else os.sep.join([os.path.dirname(os.path.dirname(fpath)), '{}-yaml.json'.format(os.path.splitext(os.path.basename(fpath))[0])])
     with open(fp, 'w') as fOut:
         print(the_json, file=fOut)
     logger.info('Saved json content in "{}".'.format(fp))
@@ -703,7 +703,8 @@ if (__name__ == '__main__'):
         logger.info('BEGIN: Reading "{}".'.format(__docker_compose_location))        
         docker_compose_data = load_docker_compose(__docker_compose_location)
         __json = json.dumps(docker_compose_data, indent=3)
-        logger.info('END!!! Reading "{}".'.format(__docker_compose_location))        
+        save_docker_compose_data(__docker_compose_location, __json)
+        logger.info('END!!! Reading "{}".'.format(__docker_compose_location))
         
         __terraform_main_tf = os.sep.join([terraform_root, 'main.tf'])
         with open(__terraform_main_tf, 'w') as fOut:
@@ -715,7 +716,49 @@ if (__name__ == '__main__'):
                 
                 resource "aws_ecs_cluster" "my_cluster" {
                     name = "my-cluster" # Naming the cluster
-                }                
+                }
+                
+                resource "aws_ecs_task_definition" "my_first_task" {
+                family                   = "my-first-task" # Naming our first task
+                container_definitions    = <<DEFINITION
+                [
+                    {
+                    "name": "my-first-task",
+                    "image": "${aws_ecr_repository.my_first_ecr_repo.repository_url}",
+                    "essential": true,
+                    "portMappings": [
+                        {
+                        "containerPort": 3000,
+                        "hostPort": 3000
+                        }
+                    ],
+                    "memory": 512,
+                    "cpu": 256
+                    }
+                ]
+                DEFINITION
+                requires_compatibilities = ["FARGATE"] # Stating that we are using ECS Fargate
+                network_mode             = "awsvpc"    # Using awsvpc as our network mode as this is required for Fargate
+                memory                   = 512         # Specifying the memory our container requires
+                cpu                      = 256         # Specifying the CPU our container requires
+                execution_role_arn       = "${aws_iam_role.ecsTaskExecutionRole.arn}"
+                }
+
+                resource "aws_iam_role" "ecsTaskExecutionRole" {
+                name               = "ecsTaskExecutionRole"
+                assume_role_policy = "${data.aws_iam_policy_document.assume_role_policy.json}"
+                }
+
+                data "aws_iam_policy_document" "assume_role_policy" {
+                statement {
+                    actions = ["sts:AssumeRole"]
+
+                    principals {
+                    type        = "Service"
+                    identifiers = ["ecs-tasks.amazonaws.com"]
+                    }
+                }
+                }
             '''
             print('provider "%s" {' % (__terraform_provider), file=fOut)
             print('    region  = "{}"'.format(aws_config.get(list(aws_config.keys())[0], {}).get('region', __aws_default_region__)), file=fOut)
