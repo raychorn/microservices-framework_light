@@ -81,3 +81,9 @@ content-type: application/json
 {
     "criteria": {"$text": {"$search": "Pub"}}
 }
+
+###
+
+POST http://3.142.87.225/ HTTP/1.1
+content-type: application/json
+

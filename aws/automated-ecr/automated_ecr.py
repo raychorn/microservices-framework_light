@@ -343,6 +343,49 @@ def save_docker_compose_data(fpath, the_json):
     logger.info('Saved json content in "{}".'.format(fp))
 
 
+def get_aws_creds_and_config(logger=None):
+    if (len(aws_creds) == 0):
+        if (logger):
+            logger.info('Checking for aws creds.')
+        resp = handle_aws_creds_or_config(__aws_creds_src__, target=aws_creds)
+        
+    if (len(aws_config) == 0):
+        if (logger):
+            logger.info('Checking for aws config.')
+        resp = handle_aws_creds_or_config(__aws_config_src__, target=aws_config)
+
+    
+
+def get_ecr_client(logger=None):
+    get_aws_creds_and_config(logger=logger)
+
+    __aws_access_key_id = aws_creds.get(list(aws_creds.keys())[0], {}).get('aws_access_key_id')
+    assert is_really_something(__aws_access_key_id, str), 'Missing the aws_access_key_id, check your config files.'
+
+    __aws_secret_access_key = aws_creds.get(list(aws_creds.keys())[0], {}).get('aws_secret_access_key')
+    assert is_really_something(__aws_secret_access_key, str), 'Missing the aws_secret_access_key, check your config files.'
+
+    ecr_client = boto3.client(
+        'ecr',
+        aws_access_key_id=__aws_access_key_id,
+        aws_secret_access_key=__aws_secret_access_key,
+        region_name=aws_config.get(list(aws_config.keys())[0], {}).get('region', __aws_default_region__)
+    )
+    return ecr_client
+
+
+def search_ecr_for_image_by_name(image_name, logger=None):
+    ecr_client = get_ecr_client(logger=logger)
+
+    response = ecr_client.describe_repositories()
+    assert 'repositories' in response.keys(), 'Cannot "{}".  Please resolve.'.format(__aws_cli_ecr_describe_repos__)
+    the_repositories = response.get('repositories', [])
+
+    if (len(the_repositories)):
+        for repo in the_repositories:
+            repo_name = repo.get('repositoryName')
+
+
 def get_container_definitions_from(data):
     '''
         [
@@ -370,6 +413,9 @@ def get_container_definitions_from(data):
         assert is_really_something(__name, str), 'Missing the container_name from a service named "{}".'.format(svc_name)
         __image = svc.get('image')
         assert is_really_something(__image, str), 'Missing the image from a service named "{}".'.format(svc_name)
+        # Was there a local build?  Can we find the image via Docker?
+        resp = search_ecr_for_image_by_name(__image)
+        # Is there a matching image in ECR?  If so use it.
         __ports = svc.get('ports')
         assert is_really_something(__ports, str), 'Missing the ports from a service named "{}".'.format(svc_name)
         __deploy = svc.get('deploy', {})
@@ -498,30 +544,14 @@ if (__name__ == '__main__'):
     __aws_config_src__ = find_aws_creds_or_config_src(__aws_config_src__)
     
     if (is_pushing_ecr or is_cleaning_ecr or is_terraform):
-        if (is_pushing_ecr or is_cleaning_ecr):
-            logger.info('Checking for aws creds.')
-            resp = handle_aws_creds_or_config(__aws_creds_src__, target=aws_creds) # , dest=__aws_creds_dest__
+        get_aws_creds_and_config(logger=logger)
 
-        logger.info('Checking for aws config.')
-        resp = handle_aws_creds_or_config(__aws_config_src__, target=aws_config) # , dest=__aws_config_dest__
-        
         __d = aws_config.get(list(aws_config.keys())[0], {})
         __d['region'] = __d.get('region', __aws_default_region__)
         aws_config[list(aws_config.keys())[0]] = __d
         
         if (is_pushing_ecr or is_cleaning_ecr):
-            __aws_access_key_id = aws_creds.get(list(aws_creds.keys())[0], {}).get('aws_access_key_id')
-            assert is_really_something(__aws_access_key_id, str), 'Missing the aws_access_key_id, check your config files.'
-        
-            __aws_secret_access_key = aws_creds.get(list(aws_creds.keys())[0], {}).get('aws_secret_access_key')
-            assert is_really_something(__aws_secret_access_key, str), 'Missing the aws_secret_access_key, check your config files.'
-    
-            ecr_client = boto3.client(
-                'ecr',
-                aws_access_key_id=__aws_access_key_id,
-                aws_secret_access_key=__aws_secret_access_key,
-                region_name=aws_config.get(list(aws_config.keys())[0], {}).get('region', __aws_default_region__)
-            )        
+            ecr_client = get_ecr_client(logger=logger)
 
     if (is_pushing_ecr):
         import docker
