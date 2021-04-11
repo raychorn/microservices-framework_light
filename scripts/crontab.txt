@@ -1,0 +1,2 @@
+0 0 * * * /home/ubuntu/microservices-framework_light/scripts/cron-job.sh >> /home/ubuntu/microservices-framework_light/scripts/cron-job.log 2>&1
+0 1 * * * /home/ubuntu/microservices-framework_light/scripts/truncate-cron-log.sh
