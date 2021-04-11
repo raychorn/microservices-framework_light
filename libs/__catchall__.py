@@ -48,7 +48,6 @@ def __catch_all__(path, request=None, response_handler=None, __json=None, logger
     the_path = [p for p in path.split('/') if (len(str(p)) > 0)]
     the_response = {"path": '/'.join(the_path[1:])}
     __fp_plugins__ = [__env__.get('plugins')]
-    print('request.method -> {}'.format(request.method))
     if (request.method in ['POST', 'PUT', 'DELETE']):
         try:
             uuid = the_path[0] if (len(the_path) > 0) else None

@@ -121,7 +121,10 @@ if (is_serverMode_fastapi()):
     async def fastapi_catch_all(request):
         __json__ = None
         if (request.method in ['POST', 'PUT', 'DELETE']):
-            __json__ = await request.json()
+            try:
+                __json__ = await request.json()
+            except:
+                __json__ = {}
         return catch_all.__catch_all__(request['path'], request=request, response_handler=fastapi_response_handler, service_runner=service_runner, __json=__json__, logger=logger, is_serverMode_flask=is_serverMode_flask, __env__=__env__, is_debugging=is_debugging, dictutils=dictutils)
 
 if (__name__ == '__main__'):
