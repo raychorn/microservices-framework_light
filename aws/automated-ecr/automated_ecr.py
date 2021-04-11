@@ -384,6 +384,11 @@ def search_ecr_for_image_by_name(image_name, logger=None):
     if (len(the_repositories)):
         for repo in the_repositories:
             repo_name = repo.get('repositoryName')
+            if (image_name.find(repo_name) > -1):
+                if (logger):
+                    logger.info('image "{}" found in "{}".'.format(image_name, repo_name))
+                    return repo.get('repositoryUri')
+    return None
 
 
 def get_container_definitions_from(data):
@@ -413,11 +418,11 @@ def get_container_definitions_from(data):
         assert is_really_something(__name, str), 'Missing the container_name from a service named "{}".'.format(svc_name)
         __image = svc.get('image')
         assert is_really_something(__image, str), 'Missing the image from a service named "{}".'.format(svc_name)
-        # Was there a local build?  Can we find the image via Docker?
-        resp = search_ecr_for_image_by_name(__image)
-        # Is there a matching image in ECR?  If so use it.
+        __uri = search_ecr_for_image_by_name(__image, logger=logger)
+        __image = __uri if (is_really_something(__uri, str)) else __image
         __ports = svc.get('ports')
         assert is_really_something(__ports, str), 'Missing the ports from a service named "{}".'.format(svc_name)
+        __host_port, __container_port = tuple(__ports.split(':'))
         __deploy = svc.get('deploy', {})
         __deploy_resources = __deploy.get('resources', {})
         __deploy_resources_limits = __deploy_resources.get('limits', {})
@@ -428,6 +433,19 @@ def get_container_definitions_from(data):
         assert is_really_something(__cpus, float), 'Missing the cpus or its not a numeric value from a service named "{}".'.format(svc_name)
         __memory = __deploy_resources_limits.get('memory')
         assert is_really_something(__memory, str), 'Missing the memory from a service named "{}".'.format(svc_name)
+
+        container_def['name'] = __name
+        container_def['image'] = __image
+        container_def['essential'] = True
+        portMappings = []
+        portMapping = {}
+        portMapping['containerPort'] = __container_port
+        portMapping['hostPort'] = __host_port
+        portMappings.append(portMapping)
+        container_def['portMappings'] = portMappings
+        container_def['memory'] = __memory
+        container_def['cpu'] = __cpus
+        container_defs.append(container_def)
     return container_defs
 
 
