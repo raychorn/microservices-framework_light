@@ -61,7 +61,9 @@ __expected_aws_docker_login__ = 'Login Succeeded'
 production_token = 'production'
 development_token = 'development'
 
-is_really_something = lambda s,t:(s is not None) and t(s)
+unpack = lambda l:l[0] if (isinstance(l, list) and (len(l) > 0)) else l
+
+is_really_something = lambda s,t:(s is not None) and (((not callable(t)) and isinstance(s, t)) or ((callable(t) and t(s))))
 is_really_something_with_stuff = lambda s,t:is_really_something(s,t) and (len(s) > 0)
 something_greater_than_zero = lambda s:(s > 0)
 default_timestamp = lambda t:t.isoformat().replace(':', '').replace('-','').split('.')[0]
@@ -391,7 +393,17 @@ def search_ecr_for_image_by_name(image_name, logger=None):
     return None
 
 
-def get_container_definitions_from(data):
+def get_environment_for_terraform_from(fpath):
+    '''
+        environment = {
+        VAR_1               = "hello"
+        VAR_2               = "world"
+        }      
+    '''
+    assert os.path.exists(fpath) and os.path.isfile(fpath), 'Cannot find the terraform environment from "{}".'.format(fpath)
+
+
+def get_container_definitions_from(data, source=None):
     '''
         [
             {
@@ -405,8 +417,12 @@ def get_container_definitions_from(data):
                 }
             ],
             "memory": 512,
-            "cpu": 256
-            }
+            "cpu": 256,
+            environment = {
+            VAR_1               = "hello"
+            VAR_2               = "world"
+            }      
+        }
         ]
     '''
     container_defs = []
@@ -422,7 +438,7 @@ def get_container_definitions_from(data):
         __image = __uri if (is_really_something(__uri, str)) else __image
         __ports = svc.get('ports')
         assert is_really_something(__ports, str), 'Missing the ports from a service named "{}".'.format(svc_name)
-        __host_port, __container_port = tuple(__ports.split(':'))
+        __host_port, __container_port = tuple(unpack(__ports).split(':'))
         __deploy = svc.get('deploy', {})
         __deploy_resources = __deploy.get('resources', {})
         __deploy_resources_limits = __deploy_resources.get('limits', {})
@@ -433,6 +449,14 @@ def get_container_definitions_from(data):
         assert is_really_something(__cpus, float), 'Missing the cpus or its not a numeric value from a service named "{}".'.format(svc_name)
         __memory = __deploy_resources_limits.get('memory')
         assert is_really_something(__memory, str), 'Missing the memory from a service named "{}".'.format(svc_name)
+        
+        __env = unpack(svc.get('env_file'))
+        assert is_really_something(source, str) and os.path.isdir(source), 'Missing the source directory.'
+        if (is_really_something(__env, str)):
+            __env = os.sep.join([source, __env])
+            assert is_really_something(__env, str) and os.path.isfile(__env), 'Missing the __env file ("{}").'.format(__env)
+            container_def['environment'] = get_environment_for_terraform_from(__env)
+
 
         container_def['name'] = __name
         container_def['image'] = __image
@@ -802,7 +826,7 @@ if (__name__ == '__main__'):
         if (is_json):
             __json = json.dumps(docker_compose_data, indent=3)
             save_docker_compose_data(__docker_compose_location, __json)
-        container_definitions = get_container_definitions_from(docker_compose_data)
+        container_definitions = get_container_definitions_from(docker_compose_data, source=os.path.dirname(__docker_compose_location))
         logger.info('END!!! Reading "{}".'.format(__docker_compose_location))
         
         __terraform_main_tf = os.sep.join([terraform_root, 'main.tf'])
