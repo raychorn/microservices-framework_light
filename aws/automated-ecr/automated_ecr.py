@@ -105,6 +105,7 @@ logging.basicConfig(
 logger = setup_rotating_file_handler(base_filename, log_filename, (1024*1024*1024), 10)
 logger.addHandler(get_stream_handler())
 
+
 if (not is_running_production()):
     import shutil
     log_root = os.path.dirname(os.path.dirname(log_filename))
@@ -400,7 +401,25 @@ def get_environment_for_terraform_from(fpath):
         VAR_2               = "world"
         }      
     '''
+    from io import StringIO
+
     assert os.path.exists(fpath) and os.path.isfile(fpath), 'Cannot find the terraform environment from "{}".'.format(fpath)
+
+    __env = {}
+    
+    from libs import __env__
+    m = sys.modules.get('libs.__env__')
+    assert m is not None, 'Cannot find "libs.__env__". Please resolve.'
+    f = getattr(m, 'read_env')
+    f(fpath=fpath, environ=__env, is_ignoring=True, override=False, logger=logger)
+    
+    oBuf = StringIO()
+    print('environment = {\n', file=oBuf)
+    for k,v in __env.items():
+        print('{} = "{}"\n'.format(k,v), file=oBuf)
+    print('}\n', file=oBuf)
+    
+    return oBuf.getvalue()
 
 
 def get_container_definitions_from(data, source=None):
