@@ -130,6 +130,6 @@ if (__name__ == '__main__'):
             toks[1] = ch.join(toks[1:])
             del toks[2:]
         return replacements.get(ch).join(toks)
-    __env = get_environment_for_terraform_from('/home/raychorn/projects/python-projects/securex.ai/data/docker/.env')
+    __env = get_environment_for_terraform_from('/home/raychorn/projects/python-projects/sample-docker-data/.env')
     __json = json.dumps(__env, cls=CompactJSONEncoder, indent=3, __replacements={':':'='}, __use_commas=False, __callback=handle_normalization)
     print(__json)

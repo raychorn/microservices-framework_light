@@ -508,7 +508,7 @@ if (__name__ == '__main__'):
         #sys.argv.append('{}={}'.format(__terraform_command_line_option__, '/tmp'))
         sys.argv.append('{}={}'.format(__terraform_provider_command_line_option__, 'aws'))
         sys.argv.append('{}={}'.format(__aws_ecs_cluster_command_line_option__, 'my_cluster1'))
-        sys.argv.append('{}={}'.format(__docker_command_line_option__, '/home/raychorn/projects/python-projects/securex.ai/data/docker'))
+        sys.argv.append('{}={}'.format(__docker_command_line_option__, '/home/raychorn/projects/python-projects/sample-docker-data/.env'))
         #sys.argv.append(__json_command_line_option__)
     
     is_verbose = any([str(arg).find(__verbose_command_line_option__) > -1 for arg in sys.argv])
