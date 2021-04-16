@@ -1,4 +1,5 @@
 import json
+from logging import exception
 from typing import Union
 
 
@@ -17,7 +18,17 @@ class CompactJSONEncoder(json.JSONEncoder):
     INDENTATION_CHAR = " "
 
     def __init__(self, *args, **kwargs):
+        self.__replacements = kwargs.get('__replacements')
+        if (self.__replacements):
+            del kwargs['__replacements']
+        self.__callback = kwargs.get('__callback')
+        if (self.__callback):
+            del kwargs['__callback']
+        self.__use_commas = kwargs.get('__use_commas')
+        if (self.__use_commas):
+            del kwargs['__use_commas']
         super().__init__(*args, **kwargs)
+        self.indent if (self.indent) else 0
         self.indentation_level = 0
 
     def encode(self, o):
@@ -31,14 +42,28 @@ class CompactJSONEncoder(json.JSONEncoder):
                 self.indentation_level -= 1
                 return "[\n" + ",\n".join(output) + "\n" + self.indent_str + "]"
         elif isinstance(o, dict):
+            def normalize(value):
+                __splits = list(self.__replacements.keys())
+                for s in __splits:
+                    __toks = value.split(s)
+                    if (len(__toks) > 1):
+                        if (callable(self.__callback)):
+                            try:
+                                value = self.__callback(ch=s, toks=__toks, replacements={s : self.__replacements.get(s)}) # {'ch': s, 'toks': __toks, 'replacements': {s : self.__replacements.get(s)}}
+                            except Exception as ex:
+                                print(ex)
+                return value
+            
+            def normalize_commas(value):
+                return value.replace(',', '') if (not self.__use_commas) else value
             if o:
                 if self._put_on_single_line(o):
-                    return "{ " + ", ".join(f"{self.encode(k)}: {self.encode(el)}" for k, el in o.items()) + " }"
+                    return "{ " + normalize_commas(", ").join(normalize(f"{self.encode(k)}: {self.encode(el)}") for k, el in o.items()) + " }"
                 else:
                     self.indentation_level += 1
-                    output = [self.indent_str + f"{json.dumps(k)}: {self.encode(v)}" for k, v in o.items()]
+                    output = [self.indent_str + normalize(f"{json.dumps(k)}: {self.encode(v)}") for k, v in o.items()]
                     self.indentation_level -= 1
-                    return "{\n" + ",\n".join(output) + "\n" + self.indent_str + "}"
+                    return "{\n" + normalize_commas(",\n").join(output) + "\n" + self.indent_str + "}"
             else:
                 return "{}"
         elif isinstance(o, float):  # Use scientific notation for floats, where appropiate
@@ -62,6 +87,7 @@ class CompactJSONEncoder(json.JSONEncoder):
     def indent_str(self) -> str:
         return self.INDENTATION_CHAR*(self.indentation_level*self.indent)
 
+
 def get_environment_for_terraform_from(fpath, logger=None):
     '''
         environment = {
@@ -71,27 +97,39 @@ def get_environment_for_terraform_from(fpath, logger=None):
     '''
     import os
     import sys
-    from io import StringIO
 
     assert os.path.exists(fpath) and os.path.isfile(fpath), 'Cannot find the terraform environment from "{}".'.format(fpath)
 
     __env = {}
     
-    from . import __env__
-    m = sys.modules.get('libs.__env__')
-    assert m is not None, 'Cannot find "libs.__env__". Please resolve.'
+    import __env__
+    m = sys.modules.get('__env__')
+    assert m is not None, 'Cannot find "__env__". Please resolve.'
     f = getattr(m, 'read_env')
     f(fpath=fpath, environ=__env, is_ignoring=True, override=False, logger=logger)
+
+    if (0):    
+        from io import StringIO
+        oBuf = StringIO()
+        print('environment = {\n', file=oBuf)
+        for k,v in __env.items():
+            print('{} = "{}"\n'.format(k,v), file=oBuf)
+        print('}\n', file=oBuf)
+        return oBuf.getvalue()
     
-    oBuf = StringIO()
-    print('environment = {\n', file=oBuf)
-    for k,v in __env.items():
-        print('{} = "{}"\n'.format(k,v), file=oBuf)
-    print('}\n', file=oBuf)
-    
-    return oBuf.getvalue()
+    return __env
 
 if (__name__ == '__main__'):
+    def handle_normalization(**kwargs):
+        ch = kwargs.get('ch')
+        toks = kwargs.get('toks', [])
+        replacements = kwargs.get('replacements', {})
+        if (ch):
+            toks[0] = toks[0].replace('"', '')
+        if (len(toks) > 2):
+            toks[1] = ch.join(toks[1:])
+            del toks[2:]
+        return replacements.get(ch).join(toks)
     __env = get_environment_for_terraform_from('/home/raychorn/projects/python-projects/securex.ai/data/docker/.env')
-    __json = json.dumps(__env, cls=CompactJSONEncoder)
+    __json = json.dumps(__env, cls=CompactJSONEncoder, indent=3, __replacements={':':'='}, __use_commas=False, __callback=handle_normalization)
     print(__json)
