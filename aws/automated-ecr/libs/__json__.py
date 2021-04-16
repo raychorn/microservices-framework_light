@@ -19,13 +19,13 @@ class CompactJSONEncoder(json.JSONEncoder):
 
     def __init__(self, *args, **kwargs):
         self.__replacements = kwargs.get('__replacements')
-        if (self.__replacements):
+        if ('__replacements' in list(kwargs.keys())):
             del kwargs['__replacements']
         self.__callback = kwargs.get('__callback')
-        if (self.__callback):
+        if ('__callback' in list(kwargs.keys())):
             del kwargs['__callback']
         self.__use_commas = kwargs.get('__use_commas')
-        if (self.__use_commas):
+        if ('__use_commas' in list(kwargs.keys())):
             del kwargs['__use_commas']
         super().__init__(*args, **kwargs)
         self.indent if (self.indent) else 0
