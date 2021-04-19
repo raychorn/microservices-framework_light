@@ -16,6 +16,11 @@ import base64
 
 import mujson as json
 
+from libs.__utils__ import default_timestamp
+from libs.__utils__ import is_really_something
+from libs.__utils__ import something_greater_than_zero
+from libs.__utils__ import is_really_something_with_stuff
+
 __docker_config_json__ = os.path.expanduser('~/.docker/config.json')
 
 __aws_creds_dest__ = os.path.expanduser('~/.aws/credentials')
@@ -63,10 +68,6 @@ development_token = 'development'
 
 unpack = lambda l:l[0] if (isinstance(l, list) and (len(l) > 0)) else l
 
-is_really_something = lambda s,t:(s is not None) and (((not callable(t)) and isinstance(s, t)) or ((callable(t) and t(s))))
-is_really_something_with_stuff = lambda s,t:is_really_something(s,t) and (len(s) > 0)
-something_greater_than_zero = lambda s:(s > 0)
-default_timestamp = lambda t:t.isoformat().replace(':', '').replace('-','').split('.')[0]
 is_running_production = lambda : (socket.gethostname() != 'DESKTOP-JJ95ENL')
 
 def get_stream_handler(streamformat="%(asctime)s:%(levelname)s -> %(message)s"):
@@ -413,13 +414,14 @@ def get_environment_for_terraform_from(fpath):
     f = getattr(m, 'read_env')
     f(fpath=fpath, environ=__env, is_ignoring=True, override=False, logger=logger)
     
-    oBuf = StringIO()
-    print('environment = {\n', file=oBuf)
-    for k,v in __env.items():
-        print('{} = "{}"\n'.format(k,v), file=oBuf)
-    print('}\n', file=oBuf)
+    if (0):
+        oBuf = StringIO()
+        print('environment = {\n', file=oBuf)
+        for k,v in __env.items():
+            print('{} = "{}"\n'.format(k,v), file=oBuf)
+        print('}\n', file=oBuf)
     
-    return oBuf.getvalue()
+    return __env # oBuf.getvalue()
 
 
 def get_container_definitions_from(data, source=None):
@@ -476,7 +478,6 @@ def get_container_definitions_from(data, source=None):
             assert is_really_something(__env, str) and os.path.isfile(__env), 'Missing the __env file ("{}").'.format(__env)
             container_def['environment'] = get_environment_for_terraform_from(__env)
 
-
         container_def['name'] = __name
         container_def['image'] = __image
         container_def['essential'] = True
@@ -508,7 +509,7 @@ if (__name__ == '__main__'):
         #sys.argv.append('{}={}'.format(__terraform_command_line_option__, '/tmp'))
         sys.argv.append('{}={}'.format(__terraform_provider_command_line_option__, 'aws'))
         sys.argv.append('{}={}'.format(__aws_ecs_cluster_command_line_option__, 'my_cluster1'))
-        sys.argv.append('{}={}'.format(__docker_command_line_option__, '/home/raychorn/projects/python-projects/sample-docker-data/.env'))
+        sys.argv.append('{}={}'.format(__docker_command_line_option__, '/home/raychorn/projects/python-projects/sample-docker-data'))
         #sys.argv.append(__json_command_line_option__)
     
     is_verbose = any([str(arg).find(__verbose_command_line_option__) > -1 for arg in sys.argv])

@@ -2,6 +2,23 @@ import json
 from logging import exception
 from typing import Union
 
+from __utils__ import default_timestamp
+from __utils__ import is_really_something
+from __utils__ import something_greater_than_zero
+from __utils__ import is_really_something_with_stuff
+
+
+def handle_normalization(**kwargs):
+    ch = kwargs.get('ch')
+    toks = kwargs.get('toks', [])
+    replacements = kwargs.get('replacements', {})
+    if (ch):
+        toks[0] = toks[0].replace('"', '')
+    if (len(toks) > 2):
+        toks[1] = ch.join(toks[1:])
+        del toks[2:]
+    return replacements.get(ch).join(toks)
+
 
 class CompactJSONEncoder(json.JSONEncoder):
     """A JSON Encoder that puts small containers on single lines."""
@@ -88,6 +105,56 @@ class CompactJSONEncoder(json.JSONEncoder):
         return self.INDENTATION_CHAR*(self.indentation_level*self.indent)
 
 
+class TerraformSectionFactory(object):
+    def section_named(self, name, callback=None, **kwargs):
+        from collections import namedtuple
+        Section = namedtuple('Section', ['name', 'callback', 'kwargs'])
+        return Section(name=name, callback=callback, kwargs=kwargs)
+
+
+class TerraformFile(TerraformSectionFactory, dict):
+    '''
+    dict of named tuples handles output.
+    '''
+    def __renderProvider(**kwargs):
+        __provider = kwargs.get('provider')
+        if (is_really_something(__provider)):
+            del kwargs['provider']
+        data = {}
+        for k,v in kwargs.items():
+            data[k] = v
+        __json = json.dumps(data, cls=CompactJSONEncoder, indent=3, __replacements={':':'='}, __use_commas=False, __callback=handle_normalization)
+        results = '''provider "{}" {}
+            {}
+{}
+        '''.format(__provider, '{', __json, '}')
+        return results
+
+
+    def addProvider(self, provider='aws', region='us-east-2', callback=None):
+        '''
+            provider "aws" {
+                region  = "eu-west-2" # this comes from the aws config files.
+            }
+        '''
+        if (not callable(callback)):
+            callback = TerraformFile.__renderProvider
+        self['provider'] = self.section_named('provider', callback=callback, provider=provider, region=region)
+
+
+    @property
+    def content(self):
+        results = []
+        for name,section in self.items():
+            if (callable(section.callback)):
+                try:
+                    resp = section.callback(**section.kwargs)
+                    results.append(resp)
+                except:
+                    pass
+        return ''.join(results)
+
+
 def get_environment_for_terraform_from(fpath, logger=None):
     '''
         environment = {
@@ -120,16 +187,13 @@ def get_environment_for_terraform_from(fpath, logger=None):
     return __env
 
 if (__name__ == '__main__'):
-    def handle_normalization(**kwargs):
-        ch = kwargs.get('ch')
-        toks = kwargs.get('toks', [])
-        replacements = kwargs.get('replacements', {})
-        if (ch):
-            toks[0] = toks[0].replace('"', '')
-        if (len(toks) > 2):
-            toks[1] = ch.join(toks[1:])
-            del toks[2:]
-        return replacements.get(ch).join(toks)
-    __env = get_environment_for_terraform_from('/home/raychorn/projects/python-projects/sample-docker-data/.env')
-    __json = json.dumps(__env, cls=CompactJSONEncoder, indent=3, __replacements={':':'='}, __use_commas=False, __callback=handle_normalization)
-    print(__json)
+    tf = TerraformFile()
+    tf.addProvider()
+    
+    if (0):
+        __env = get_environment_for_terraform_from('/home/raychorn/projects/python-projects/sample-docker-data/.env')
+        __json = json.dumps(__env, cls=CompactJSONEncoder, indent=3, __replacements={':':'='}, __use_commas=False, __callback=handle_normalization)
+        print(__json)
+
+    print(tf.content)
+    print('DONE!')
