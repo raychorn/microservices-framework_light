@@ -1,4 +1,7 @@
+import sys
 import json
+import traceback
+
 from logging import exception
 from typing import Union
 
@@ -118,7 +121,7 @@ class TerraformFile(TerraformSectionFactory, dict):
     '''
     def __renderProvider(**kwargs):
         __provider = kwargs.get('provider')
-        if (is_really_something(__provider)):
+        if (is_really_something(__provider, str)):
             del kwargs['provider']
         data = {}
         for k,v in kwargs.items():
@@ -128,6 +131,25 @@ class TerraformFile(TerraformSectionFactory, dict):
             {}
 {}
         '''.format(__provider, '{', __json, '}')
+        return results
+
+
+    def __renderResource(**kwargs):
+        __resource = kwargs.get('resource')
+        if (is_really_something(__resource, str)):
+            del kwargs['resource']
+        __name2 = kwargs.get('name2')
+        if (is_really_something(__name2, str)):
+            del kwargs['name2']
+            kwargs['name'] = __name2
+        data = {}
+        for k,v in kwargs.items():
+            data[k] = v
+        __json = json.dumps(data, cls=CompactJSONEncoder, indent=3, __replacements={':':'='}, __use_commas=False, __callback=handle_normalization)
+        results = '''resource "{}" {} {}
+            {}
+{}
+        '''.format(__resource, __name2, '{', __json, '}')
         return results
 
 
@@ -142,16 +164,32 @@ class TerraformFile(TerraformSectionFactory, dict):
         self['provider'] = self.section_named('provider', callback=callback, provider=provider, region=region)
 
 
+    def addResource(self, resource='aws_ecr_repository', name='my_first_ecr_repo', callback=None):
+        '''
+            resource "aws_ecr_repository" "my_first_ecr_repo" {
+                name = "my-first-ecr-repo" # Naming my repository
+            }            
+        '''
+        if (not callable(callback)):
+            callback = TerraformFile.__renderResource
+        self[resource] = self.section_named('resource', callback=callback, resource=resource, name2=name)
+
+
     @property
     def content(self):
         results = []
-        for name,section in self.items():
+        for _,section in self.items():
             if (callable(section.callback)):
                 try:
                     resp = section.callback(**section.kwargs)
                     results.append(resp)
-                except:
-                    pass
+                except Exception as ex:
+                    extype, ex, tb = sys.exc_info()
+                    print('EXCEPTION:')
+                    for l in traceback.format_exception(extype, ex, tb):
+                        print(l.rstrip())
+                    print('-'*30)
+                    print()
         return ''.join(results)
 
 
@@ -188,7 +226,9 @@ def get_environment_for_terraform_from(fpath, logger=None):
 
 if (__name__ == '__main__'):
     tf = TerraformFile()
-    tf.addProvider()
+    tf.addProvider(provider='aws', region='us-east-2')
+    tf.addResource(resource='aws_ecr_repository', name='my_first_ecr_repo')
+    tf.addResource(resource='aws_ecs_cluster', name='my_cluster')
     
     if (0):
         __env = get_environment_for_terraform_from('/home/raychorn/projects/python-projects/sample-docker-data/.env')
