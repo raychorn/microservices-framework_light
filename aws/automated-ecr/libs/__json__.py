@@ -229,11 +229,11 @@ class TerraformFile(TerraformSectionFactory, dict):
         return ''.join(results)
 
 
-def get_terraform_file_contents(docker_compose_data, docker_compose_location=None, aws_creds=None, aws_config=None, aws_creds_src=None, aws_config_src=None, aws_default_region=None, aws_cli_ecr_describe_repos=None):
+def get_terraform_file_contents(docker_compose_data, aws_ecs_cluster_name=None, aws_ecs_repo_name=None, docker_compose_location=None, aws_creds=None, aws_config=None, aws_creds_src=None, aws_config_src=None, aws_default_region=None, aws_cli_ecr_describe_repos=None):
     tf = TerraformFile()
     tf.addProvider(provider='aws', region='us-east-2')
-    tf.addResource(resource='aws_ecr_repository', name='my_first_ecr_repo')
-    tf.addResource(resource='aws_ecs_cluster', name='my_cluster')
+    tf.addResource(resource='aws_ecr_repository', name=aws_ecs_repo_name)
+    tf.addResource(resource='aws_ecs_cluster', name=aws_ecs_cluster_name)
     
     resource = tf.addResource(resource='aws_ecs_task_definition', name='my_first_task')
     resource.kwargs['family'] = 'my-first-task'
@@ -280,38 +280,7 @@ if (__name__ == '__main__'):
 
     docker_compose_data = load_docker_compose(__docker_compose_location)
 
-    if (0):    
-        tf = TerraformFile()
-        tf.addProvider(provider='aws', region='us-east-2')
-        tf.addResource(resource='aws_ecr_repository', name='my_first_ecr_repo')
-        tf.addResource(resource='aws_ecs_cluster', name='my_cluster')
-        
-        resource = tf.addResource(resource='aws_ecs_task_definition', name='my_first_task')
-        resource.kwargs['family'] = 'my-first-task'
-        
-        container_definitions = get_container_definitions_from(docker_compose_data, source=os.path.dirname(__docker_compose_location), aws_creds=aws_creds, aws_config=aws_config, aws_creds_src=__aws_creds_src__, aws_config_src=__aws_config_src__, aws_default_region=__aws_default_region__, aws_cli_ecr_describe_repos=__aws_cli_ecr_describe_repos__)
-
-        resource.kwargs['container_definitions'] = container_definitions
-        resource.kwargs['requires_compatibilities'] = ["FARGATE"]
-        resource.kwargs['network_mode'] = "awsvpc"
-        resource.kwargs['execution_role_arn'] = "${aws_iam_role.ecsTaskExecutionRole.arn}"
-        tf.saveResource(resource=resource)
-
-        resource = tf.addResource(resource='aws_iam_role', name='ecsTaskExecutionRole')
-        resource.kwargs['assume_role_policy'] = "${data.aws_iam_policy_document.assume_role_policy.json}"
-        tf.saveResource(resource=resource)
-
-        resource = tf.addData(resource='aws_iam_policy_document', name='assume_role_policy')
-        resource.kwargs['statement'] = {}
-        resource.kwargs['statement']['actions'] = ["sts:AssumeRole"]
-        resource.kwargs['statement']['principals'] = {}
-        resource.kwargs['statement']['principals']['type'] = "Service"
-        resource.kwargs['statement']['principals']['identifiers'] = ["ecs-tasks.amazonaws.com"]
-        tf.saveResource(resource=resource)
-
-        __content = tf.content
-    else:
-        __content = get_terraform_file_contents(docker_compose_data, docker_compose_location=__docker_compose_location, aws_creds=aws_creds, aws_config=aws_config, aws_creds_src=__aws_creds_src__, aws_config_src=__aws_config_src__, aws_default_region=__aws_default_region__, aws_cli_ecr_describe_repos=__aws_cli_ecr_describe_repos__)
+    __content = get_terraform_file_contents(docker_compose_data, aws_ecs_cluster_name='my_cluster', docker_compose_location=__docker_compose_location, aws_creds=aws_creds, aws_config=aws_config, aws_creds_src=__aws_creds_src__, aws_config_src=__aws_config_src__, aws_default_region=__aws_default_region__, aws_cli_ecr_describe_repos=__aws_cli_ecr_describe_repos__)
     print(__content)
     save_json_data(__docker_compose_location.replace('docker-compose.yml', 'terraform-compose.tf'), __content)
     print('DONE!')

@@ -27,6 +27,8 @@ from libs.__utils__ import find_aws_creds_or_config_src
 from libs.__utils__ import is_really_something_with_stuff
 from libs.__utils__ import get_container_definitions_from
 
+from libs.__json__ import get_terraform_file_contents
+
 __docker_config_json__ = os.path.expanduser('~/.docker/config.json')
 
 __aws_creds_dest__ = os.path.expanduser('~/.aws/credentials')
@@ -150,6 +152,7 @@ __detailed_ecr_report_command_line_option__ = '--detailed'
 __dryrun_command_line_option__ = '--dryrun'
 __terraform_command_line_option__ = '--terraform' # --terraform=path
 __terraform_provider_command_line_option__ = '--provider' # [aws|azure|gcloud]
+__aws_ecs_repo_command_line_option__ = "--aws_ecs_repo" # must specify a repo name
 __aws_ecs_cluster_command_line_option__ = "--aws_ecs_cluster" # must specify a cluster name
 __docker_command_line_option__ = "--docker" # must specify a path for terraform processing
 __json_command_line_option__ = "--json"
@@ -314,6 +317,7 @@ if (__name__ == '__main__'):
         #sys.argv.append('{}={}'.format(__terraform_command_line_option__, '/tmp'))
         sys.argv.append('{}={}'.format(__terraform_provider_command_line_option__, 'aws'))
         sys.argv.append('{}={}'.format(__aws_ecs_cluster_command_line_option__, 'my_cluster1'))
+        sys.argv.append('{}={}'.format(__aws_ecs_repo_command_line_option__, 'my_first_ecr_repo'))
         sys.argv.append('{}={}'.format(__docker_command_line_option__, '/home/raychorn/projects/python-projects/sample-docker-data'))
         #sys.argv.append(__json_command_line_option__)
     
@@ -363,10 +367,17 @@ if (__name__ == '__main__'):
         assert (is_really_something(__terraform_provider_flag, str)), 'Missing terraform provider flag and this is a programming issue.'
         logger.info('terraform provider: {}'.format(__terraform_provider))
 
+    __aws_ecs_cluster_flag, __aws_ecs_cluster_name = tuple([None, None])
     if (is_terraform):
         __aws_ecs_cluster_flag, __aws_ecs_cluster_name = parse_complex_command_line_option(sys.argv, find_something=__aws_ecs_cluster_command_line_option__)
         assert (is_really_something(__aws_ecs_cluster_name, str)), 'Missing terrform aws_ecs_cluster.'
         logger.info('terraform aws_ecs_cluster is : {}'.format(__aws_ecs_cluster_name))
+        
+    __aws_ecs_repo_flag, __aws_ecs_repo_name = tuple([None, None])
+    if (is_terraform):
+        __aws_ecs_repo_flag, __aws_ecs_repo_name = parse_complex_command_line_option(sys.argv, find_something=__aws_ecs_repo_command_line_option__)
+        assert (is_really_something(__aws_ecs_repo_name, str)), 'Missing terrform aws_ecs_repo_name.'
+        logger.info('terraform aws_ecs_repo_name is : {}'.format(__aws_ecs_repo_name))
             
     if (is_terraform):
         __docker_flag, __docker_root = parse_complex_command_line_option(sys.argv, find_something=__docker_command_line_option__)
@@ -656,67 +667,9 @@ if (__name__ == '__main__'):
         
         __terraform_main_tf = os.sep.join([terraform_root, 'main.tf'])
         with open(__terraform_main_tf, 'w') as fOut:
-            '''
-                provider "aws" {
-                    version = "~> 2.0" (this line has been deprecated.)
-                    region  = "eu-west-2" # this comes from the aws config files.
-                }
-                
-                resource "aws_ecs_cluster" "my_cluster" {
-                    name = "my-cluster" # Naming the cluster
-                }
-                
-                resource "aws_ecs_task_definition" "my_first_task" {
-                family                   = "my-first-task" # Naming our first task
-                container_definitions    = <<DEFINITION
-                [
-                    {
-                    "name": "my-first-task",
-                    "image": "${aws_ecr_repository.my_first_ecr_repo.repository_url}",
-                    "essential": true,
-                    "portMappings": [
-                        {
-                        "containerPort": 3000,
-                        "hostPort": 3000
-                        }
-                    ],
-                    "memory": 512,
-                    "cpu": 256
-                    }
-                ]
-                DEFINITION
-                requires_compatibilities = ["FARGATE"] # Stating that we are using ECS Fargate
-                network_mode             = "awsvpc"    # Using awsvpc as our network mode as this is required for Fargate
-                memory                   = 512         # Specifying the memory our container requires
-                cpu                      = 256         # Specifying the CPU our container requires
-                execution_role_arn       = "${aws_iam_role.ecsTaskExecutionRole.arn}"
-                }
+            __content = get_terraform_file_contents(docker_compose_data, aws_ecs_cluster_name=__aws_ecs_cluster_name, aws_ecs_repo_name=__aws_ecs_repo_name, docker_compose_location=__docker_compose_location, aws_creds=aws_creds, aws_config=aws_config, aws_creds_src=__aws_creds_src__, aws_config_src=__aws_config_src__, aws_default_region=__aws_default_region__, aws_cli_ecr_describe_repos=__aws_cli_ecr_describe_repos__)
+            print(__content, file=fOut)
 
-                resource "aws_iam_role" "ecsTaskExecutionRole" {
-                name               = "ecsTaskExecutionRole"
-                assume_role_policy = "${data.aws_iam_policy_document.assume_role_policy.json}"
-                }
-
-                data "aws_iam_policy_document" "assume_role_policy" {
-                statement {
-                    actions = ["sts:AssumeRole"]
-
-                    principals {
-                    type        = "Service"
-                    identifiers = ["ecs-tasks.amazonaws.com"]
-                    }
-                }
-                }
-            '''
-            print('provider "%s" {' % (__terraform_provider), file=fOut)
-            print('    region  = "{}"'.format(aws_config.get(list(aws_config.keys())[0], {}).get('region', __aws_default_region__)), file=fOut)
-            print('}\n', file=fOut)
-
-            if ((is_really_something(__aws_ecs_cluster_flag, str))):
-                print('resource "aws_ecs_cluster" "%s" {' % (__aws_ecs_cluster_name), file=fOut)
-                print('  name = "%s"' % (__aws_ecs_cluster_name), file=fOut)
-                print('}\n', file=fOut)
-        
         logger.info('terraform init -> {}'.format(' '.join([str(r).replace('\n', ' ').strip() for r in resp])))
         logger.info('END!!! Terraform Processing')
         
