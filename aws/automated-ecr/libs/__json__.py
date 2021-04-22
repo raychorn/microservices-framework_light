@@ -1,3 +1,4 @@
+import os
 import sys
 import json
 import traceback
@@ -5,10 +6,15 @@ import traceback
 from logging import exception
 from typing import Union
 
+from __utils__ import unpack
 from __utils__ import default_timestamp
 from __utils__ import is_really_something
 from __utils__ import something_greater_than_zero
 from __utils__ import is_really_something_with_stuff
+from __utils__ import load_docker_compose
+from __utils__ import find_aws_creds_or_config_src
+from __utils__ import get_container_definitions_from
+from __utils__ import get_environment_for_terraform_from
 
 
 def handle_normalization(**kwargs):
@@ -162,6 +168,7 @@ class TerraformFile(TerraformSectionFactory, dict):
         if (not callable(callback)):
             callback = TerraformFile.__renderProvider
         self['provider'] = self.section_named('provider', callback=callback, provider=provider, region=region)
+        return self['provider']
 
 
     def addResource(self, resource='aws_ecr_repository', name='my_first_ecr_repo', callback=None):
@@ -173,6 +180,11 @@ class TerraformFile(TerraformSectionFactory, dict):
         if (not callable(callback)):
             callback = TerraformFile.__renderResource
         self[resource] = self.section_named('resource', callback=callback, resource=resource, name2=name)
+        return self[resource]
+
+
+    def saveResource(self, resource=None):
+        self[resource.kwargs.get('resource')] = resource
 
 
     @property
@@ -193,47 +205,53 @@ class TerraformFile(TerraformSectionFactory, dict):
         return ''.join(results)
 
 
-def get_environment_for_terraform_from(fpath, logger=None):
-    '''
-        environment = {
-        VAR_1               = "hello"
-        VAR_2               = "world"
-        }      
-    '''
-    import os
-    import sys
-
-    assert os.path.exists(fpath) and os.path.isfile(fpath), 'Cannot find the terraform environment from "{}".'.format(fpath)
-
-    __env = {}
-    
-    import __env__
-    m = sys.modules.get('__env__')
-    assert m is not None, 'Cannot find "__env__". Please resolve.'
-    f = getattr(m, 'read_env')
-    f(fpath=fpath, environ=__env, is_ignoring=True, override=False, logger=logger)
-
-    if (0):    
-        from io import StringIO
-        oBuf = StringIO()
-        print('environment = {\n', file=oBuf)
-        for k,v in __env.items():
-            print('{} = "{}"\n'.format(k,v), file=oBuf)
-        print('}\n', file=oBuf)
-        return oBuf.getvalue()
-    
-    return __env
-
 if (__name__ == '__main__'):
+    aws_creds = {}
+    aws_config = {}
+
+    __aws_default_region__ = 'us-east-2'
+    __aws_cli_ecr_describe_repos__ = ['aws', 'ecr', 'describe-repositories']
+
+    __aws_creds_src__ = './.aws/credentials'
+    __aws_config_src__ = './.aws/config'
+
+    __aws_creds_src__ = find_aws_creds_or_config_src(__aws_creds_src__)
+    __aws_config_src__ = find_aws_creds_or_config_src(__aws_config_src__)
+    
     tf = TerraformFile()
     tf.addProvider(provider='aws', region='us-east-2')
     tf.addResource(resource='aws_ecr_repository', name='my_first_ecr_repo')
     tf.addResource(resource='aws_ecs_cluster', name='my_cluster')
     
-    if (0):
-        __env = get_environment_for_terraform_from('/home/raychorn/projects/python-projects/sample-docker-data/.env')
-        __json = json.dumps(__env, cls=CompactJSONEncoder, indent=3, __replacements={':':'='}, __use_commas=False, __callback=handle_normalization)
-        print(__json)
+    resource = tf.addResource(resource='aws_ecs_task_definition', name='my_first_task')
+    resource.kwargs['family'] = 'my-first-task'
+    
+    __docker_root = '/home/raychorn/projects/python-projects/sample-docker-data'
+    __docker_compose_filename__ = 'docker-compose.yml'
+
+    __env = get_environment_for_terraform_from(os.sep.join([__docker_root, '.env']))
+    #__json = json.dumps(__env, cls=CompactJSONEncoder, indent=3, __replacements={':':'='}, __use_commas=False, __callback=handle_normalization)
+
+    __docker_compose_location = os.sep.join([__docker_root, __docker_compose_filename__])
+
+    docker_compose_data = load_docker_compose(__docker_compose_location)
+
+    container_definitions = get_container_definitions_from(docker_compose_data, source=os.path.dirname(__docker_compose_location), aws_creds=aws_creds, aws_config=aws_config, aws_creds_src=__aws_creds_src__, aws_config_src=__aws_config_src__, aws_default_region=__aws_default_region__, aws_cli_ecr_describe_repos=__aws_cli_ecr_describe_repos__)
+
+
+    resource.kwargs['container_definitions'] = __env
+    resource.kwargs['requires_compatibilities'] = ["FARGATE"]
+    resource.kwargs['network_mode'] = "awsvpc"
+    #kwargs['memory'] = 512 # ???
+    #kwargs['cpu'] = 256 # ???
+    resource.kwargs['execution_role_arn'] = "${aws_iam_role.ecsTaskExecutionRole.arn}"
+    tf.saveResource(resource=resource)
+
+
+    resource = tf.addResource(resource='aws_iam_role', name='ecsTaskExecutionRole')
+    resource.kwargs['assume_role_policy'] = "${data.aws_iam_policy_document.assume_role_policy.json}"
+    tf.saveResource(resource=resource)
+
 
     print(tf.content)
     print('DONE!')
