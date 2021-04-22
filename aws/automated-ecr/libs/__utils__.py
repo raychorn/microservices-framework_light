@@ -37,6 +37,25 @@ def get_something_from_something(l, regex=None, name=None):
     return None
 
 
+ensure_fpath_is_dirname = lambda fpath:os.path.dirname(fpath) if (os.path.isdir(fpath)) else fpath
+
+def save_docker_compose_data(fpath, the_json, use_name=False, logger=None):
+    assert (is_really_something(fpath, str)), 'Missing the directory where you want to store the json.'
+    assert (is_really_something(the_json, str)), 'Missing the json content.'
+    fp = fpath if (fpath.find('.json') > -1) else os.sep.join([os.path.dirname(ensure_fpath_is_dirname(fpath)), '{}{}'.format('' if (use_name) else '-yaml.json', os.path.basename(fpath) if (use_name) else os.path.splitext(os.path.basename(fpath))[0])])
+    with open(fp, 'w') as fOut:
+        print(the_json, file=fOut)
+    msg = 'Saved json content in "{}".'.format(fp)
+    if (logger):
+        logger.info(msg)
+    else:
+        print(msg)
+
+
+def save_json_data(fpath, the_json, logger=None):
+    save_docker_compose_data(fpath, the_json, use_name=True, logger=logger)
+
+
 def handle_aws_creds_or_config(fpath, dest=None, target=None):
     assert isinstance(target, dict), 'target must be a dict object.'
     __d__ = target

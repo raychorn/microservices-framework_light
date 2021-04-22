@@ -7,12 +7,13 @@ from logging import exception
 from typing import Union
 
 from __utils__ import unpack
+from __utils__ import save_json_data
 from __utils__ import default_timestamp
+from __utils__ import load_docker_compose
 from __utils__ import is_really_something
 from __utils__ import something_greater_than_zero
-from __utils__ import is_really_something_with_stuff
-from __utils__ import load_docker_compose
 from __utils__ import find_aws_creds_or_config_src
+from __utils__ import is_really_something_with_stuff
 from __utils__ import get_container_definitions_from
 from __utils__ import get_environment_for_terraform_from
 
@@ -136,7 +137,7 @@ class TerraformFile(TerraformSectionFactory, dict):
         results = '''provider "{}" {}
             {}
 {}
-        '''.format(__provider, '{', __json, '}')
+'''.format(__provider, '{', __json, '}')
         return results
 
 
@@ -155,8 +156,12 @@ class TerraformFile(TerraformSectionFactory, dict):
         results = '''resource "{}" {} {}
             {}
 {}
-        '''.format(__resource, __name2, '{', __json, '}')
+'''.format(__resource, __name2, '{', __json, '}')
         return results
+
+
+    def __renderData(**kwargs):
+        return TerraformFile.__renderResource(**kwargs)
 
 
     def addProvider(self, provider='aws', region='us-east-2', callback=None):
@@ -180,6 +185,25 @@ class TerraformFile(TerraformSectionFactory, dict):
         if (not callable(callback)):
             callback = TerraformFile.__renderResource
         self[resource] = self.section_named('resource', callback=callback, resource=resource, name2=name)
+        return self[resource]
+
+
+    def addData(self, resource='aws_iam_policy_document', name='assume_role_policy', callback=None):
+        '''
+            data "aws_iam_policy_document" "assume_role_policy" {
+            statement {
+                actions = ["sts:AssumeRole"]
+
+                principals {
+                type        = "Service"
+                identifiers = ["ecs-tasks.amazonaws.com"]
+                }
+            }
+            }
+        '''
+        if (not callable(callback)):
+            callback = TerraformFile.__renderData
+        self[resource] = self.section_named('data', callback=callback, resource=resource, name2=name)
         return self[resource]
 
 
@@ -239,11 +263,9 @@ if (__name__ == '__main__'):
     container_definitions = get_container_definitions_from(docker_compose_data, source=os.path.dirname(__docker_compose_location), aws_creds=aws_creds, aws_config=aws_config, aws_creds_src=__aws_creds_src__, aws_config_src=__aws_config_src__, aws_default_region=__aws_default_region__, aws_cli_ecr_describe_repos=__aws_cli_ecr_describe_repos__)
 
 
-    resource.kwargs['container_definitions'] = __env
+    resource.kwargs['container_definitions'] = container_definitions
     resource.kwargs['requires_compatibilities'] = ["FARGATE"]
     resource.kwargs['network_mode'] = "awsvpc"
-    #kwargs['memory'] = 512 # ???
-    #kwargs['cpu'] = 256 # ???
     resource.kwargs['execution_role_arn'] = "${aws_iam_role.ecsTaskExecutionRole.arn}"
     tf.saveResource(resource=resource)
 
@@ -253,5 +275,16 @@ if (__name__ == '__main__'):
     tf.saveResource(resource=resource)
 
 
-    print(tf.content)
+    resource = tf.addData(resource='aws_iam_policy_document', name='assume_role_policy')
+    resource.kwargs['statement'] = {}
+    resource.kwargs['statement']['actions'] = ["sts:AssumeRole"]
+    resource.kwargs['statement']['principals'] = {}
+    resource.kwargs['statement']['principals']['type'] = "Service"
+    resource.kwargs['statement']['principals']['identifiers'] = ["ecs-tasks.amazonaws.com"]
+    tf.saveResource(resource=resource)
+
+
+    __content = tf.content
+    print(__content)
+    save_json_data(__docker_compose_location.replace('docker-compose.yml', 'terraform-compose.tf'), __content)
     print('DONE!')

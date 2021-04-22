@@ -17,13 +17,14 @@ import base64
 import mujson as json
 
 from libs.__utils__ import unpack
-from libs.__utils__ import default_timestamp
-from libs.__utils__ import is_really_something
-from libs.__utils__ import something_greater_than_zero
-from libs.__utils__ import is_really_something_with_stuff
-from libs.__utils__ import load_docker_compose
 from libs.__utils__ import get_ecr_client
+from libs.__utils__ import default_timestamp
+from libs.__utils__ import load_docker_compose
+from libs.__utils__ import is_really_something
+from libs.__utils__ import save_docker_compose_data
+from libs.__utils__ import something_greater_than_zero
 from libs.__utils__ import find_aws_creds_or_config_src
+from libs.__utils__ import is_really_something_with_stuff
 from libs.__utils__ import get_container_definitions_from
 
 __docker_config_json__ = os.path.expanduser('~/.docker/config.json')
@@ -266,15 +267,6 @@ def parse_complex_command_line_option(argv, find_something=None, sep='=', one_of
             response = __options[0]
         return response, None
     return None, None
-
-
-def save_docker_compose_data(fpath, the_json):
-    assert (is_really_something(fpath, str)), 'Missing the directory where you want to store the json.'
-    assert (is_really_something(the_json, str)), 'Missing the json content.'
-    fp = fpath if (fpath.find('.json') > -1) else os.sep.join([os.path.dirname(os.path.dirname(fpath)), '{}-yaml.json'.format(os.path.splitext(os.path.basename(fpath))[0])])
-    with open(fp, 'w') as fOut:
-        print(the_json, file=fOut)
-    logger.info('Saved json content in "{}".'.format(fp))
 
 
 def get_environment_for_terraform_from(fpath):
