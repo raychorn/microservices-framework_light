@@ -157,8 +157,8 @@ def get_environment_for_terraform_from(fpath, logger=None):
 
     __env = {}
     
-    import __env__
-    m = sys.modules.get('__env__')
+    from . import __env__
+    m = sys.modules.get('libs.__env__')
     assert m is not None, 'Cannot find "__env__". Please resolve.'
     f = getattr(m, 'read_env')
     f(fpath=fpath, environ=__env, is_ignoring=True, override=False, logger=logger)

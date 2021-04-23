@@ -424,7 +424,7 @@ if (__name__ == '__main__'):
     __aws_config_src__ = find_aws_creds_or_config_src(__aws_config_src__)
     
     if (is_pushing_ecr or is_cleaning_ecr or is_terraform):
-        get_aws_creds_and_config(logger=logger)
+        get_aws_creds_and_config(aws_creds=aws_creds, aws_config=aws_config, aws_creds_src=__aws_creds_src__, aws_config_src=__aws_config_src__, logger=logger)
 
         __d = aws_config.get(list(aws_config.keys())[0], {})
         __d['region'] = __d.get('region', __aws_default_region__)
