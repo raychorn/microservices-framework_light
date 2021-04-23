@@ -6,16 +6,34 @@ import traceback
 from logging import exception
 from typing import Union
 
-from __utils__ import unpack
-from __utils__ import save_json_data
-from __utils__ import default_timestamp
-from __utils__ import load_docker_compose
-from __utils__ import is_really_something
-from __utils__ import something_greater_than_zero
-from __utils__ import find_aws_creds_or_config_src
-from __utils__ import is_really_something_with_stuff
-from __utils__ import get_container_definitions_from
-from __utils__ import get_environment_for_terraform_from
+try:
+    from .__utils__ import unpack
+    from .__utils__ import save_json_data
+    from .__utils__ import default_timestamp
+    from .__utils__ import load_docker_compose
+    from .__utils__ import is_really_something
+    from .__utils__ import something_greater_than_zero
+    from .__utils__ import find_aws_creds_or_config_src
+    from .__utils__ import is_really_something_with_stuff
+    from .__utils__ import get_container_definitions_from
+    from .__utils__ import get_environment_for_terraform_from
+except ImportError:
+    def import_func_from(func_name, module):
+        func = getattr(module, func_name)
+        assert callable(func), 'Cannot find {} in {}.'.format(func_name, module.__name__)
+        return func
+
+    func_names = ['unpack', 'save_json_data', 'default_timestamp', 'load_docker_compose', 'is_really_something', 'something_greater_than_zero', 'find_aws_creds_or_config_src', 'is_really_something_with_stuff', 'get_container_definitions_from', 'get_environment_for_terraform_from']
+
+    __self__ = sys.modules.get(__name__)
+
+    __utils__ = None
+    modules = [m for m in sys.modules if (m.find('__utils__') > -1)]
+    if (len(modules) > 0):
+        __utils__ = sys.modules.get(modules[0])
+        for n in func_names:
+            f = import_func_from(n, __utils__)
+            setattr(__self__, n, f)
 
 
 def handle_normalization(**kwargs):

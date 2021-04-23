@@ -21,6 +21,7 @@ from libs.__utils__ import get_ecr_client
 from libs.__utils__ import default_timestamp
 from libs.__utils__ import load_docker_compose
 from libs.__utils__ import is_really_something
+from libs.__utils__ import get_aws_creds_and_config
 from libs.__utils__ import save_docker_compose_data
 from libs.__utils__ import something_greater_than_zero
 from libs.__utils__ import find_aws_creds_or_config_src
@@ -313,7 +314,8 @@ if (__name__ == '__main__'):
             sys.argv.append(__detailed_ecr_report_command_line_option__)
             #sys.argv.append(__dryrun_command_line_option__)
         sys.argv.append(__verbose_command_line_option__)
-        sys.argv.append(__terraform_command_line_option__)
+        sys.argv.append('{}={}'.format(__terraform_command_line_option__, '/home/raychorn/projects/python-projects/sample-terraform-data'))
+        
         #sys.argv.append('{}={}'.format(__terraform_command_line_option__, '/tmp'))
         sys.argv.append('{}={}'.format(__terraform_provider_command_line_option__, 'aws'))
         sys.argv.append('{}={}'.format(__aws_ecs_cluster_command_line_option__, 'my_cluster1'))
