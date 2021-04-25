@@ -68,6 +68,7 @@ def __unescape(v):
 
 __env__ = {}
 env_literals = []
+env_escapes = []
 def get_environ_keys(*args, **kwargs):
     from expandvars import expandvars
     
@@ -83,9 +84,16 @@ def get_environ_keys(*args, **kwargs):
                 env_literals.append(item)
         else:
             env_literals.append(_v)
+    if (k == '__ESCAPED__'):
+        _v = eval(v)
+        if (isinstance(_v, list)):
+            for item in _v:
+                env_escapes.append(item)
+        else:
+            env_escapes.append(_v)
     if (isinstance(v, str)):
         v = expandvars(v) if (k not in env_literals) else v
-        v = __escape(v) if (k in __env__.get('__ESCAPED__', [])) else eval(v) if (k in __env__.get('__EVALS__', [])) else v
+        v = __escape(v) if (k in env_escapes) else eval(v) if (k in __env__.get('__EVALS__', [])) else v
     ignoring = __env__.get('IGNORING', [])
     environ = kwargs.get('environ', None)
     if (isinstance(environ, dict)):
