@@ -39,7 +39,7 @@ f(logger=logger)
 __env__ = getattr(m, '__env__')
 
 import socket
-os.environ['is_production'] = socket.gethostname() == 'DESKTOP-JJ95ENL'
+os.environ['is_production'] = socket.gethostname() != 'DESKTOP-JJ95ENL'
 
 assert os.path.exists(__env__.get('plugins')), 'Missing the plugins path, check your .env file.'
 
