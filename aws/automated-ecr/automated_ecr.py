@@ -672,7 +672,8 @@ if (__name__ == '__main__'):
             __content = get_terraform_file_contents(docker_compose_data, aws_ecs_cluster_name=__aws_ecs_cluster_name, aws_ecs_repo_name=__aws_ecs_repo_name, docker_compose_location=__docker_compose_location, aws_creds=aws_creds, aws_config=aws_config, aws_creds_src=__aws_creds_src__, aws_config_src=__aws_config_src__, aws_default_region=__aws_default_region__, aws_cli_ecr_describe_repos=__aws_cli_ecr_describe_repos__)
             print(__content, file=fOut)
         
-        tf.cmd('validate -json')
+        ret_code, out, err = tf.cmd('validate -json', capture_output=True)
+        logger.info('terraform validate -> ret code -> {} err -> {} out -> {}'.format(ret_code, err, out))
 
         logger.info('terraform init -> {}'.format(' '.join([str(r).replace('\n', ' ').strip() for r in resp])))
         logger.info('END!!! Terraform Processing')
