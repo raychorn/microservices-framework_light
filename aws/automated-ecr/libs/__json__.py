@@ -48,6 +48,20 @@ def handle_normalization(**kwargs):
     return replacements.get(ch).join(toks)
 
 
+def snip_surrounding_chars(s, chars="{}"):
+    ch1 = chars[0]
+    for i in range(0, len(s)):
+        if (s[i] == ch1):
+            i += 1
+            break
+    ch2 = chars[-1]
+    for j in range(len(s)-1, 0, -1):
+        if (s[j] == ch2):
+            j -= 1
+            break
+    return s[i:j]
+
+
 class CompactJSONEncoder(json.JSONEncoder):
     """A JSON Encoder that puts small containers on single lines."""
 
@@ -145,36 +159,36 @@ class TerraformFile(TerraformSectionFactory, dict):
     dict of named tuples handles output.
     '''
     def __renderProvider(**kwargs):
-        __provider = kwargs.get('provider')
-        if (is_really_something(__provider, str)):
+        provider = kwargs.get('provider')
+        if (is_really_something(provider, str)):
             del kwargs['provider']
         data = {}
         for k,v in kwargs.items():
             data[k] = v
-        __json = json.dumps(data, cls=CompactJSONEncoder, indent=3, __replacements={':':'='}, __use_commas=False, __callback=handle_normalization)
+        _json = json.dumps(data, cls=CompactJSONEncoder, indent=3, __replacements={':':'='}, __use_commas=False, __callback=handle_normalization)
         results = '''provider "{}" {}
             {}
 {}
-'''.format(__provider, '{', __json, '}')
+'''.format(provider, '{', snip_surrounding_chars(_json), '}')
         return results
 
 
     def __renderResource(**kwargs):
-        __resource = kwargs.get('resource')
-        if (is_really_something(__resource, str)):
+        resource = kwargs.get('resource')
+        if (is_really_something(resource, str)):
             del kwargs['resource']
-        __name2 = kwargs.get('name2')
-        if (is_really_something(__name2, str)):
+        name2 = kwargs.get('name2')
+        if (is_really_something(name2, str)):
             del kwargs['name2']
-            kwargs['name'] = __name2
+            kwargs['name'] = name2
         data = {}
         for k,v in kwargs.items():
             data[k] = v
-        __json = json.dumps(data, cls=CompactJSONEncoder, indent=3, __replacements={':':'='}, __use_commas=False, __callback=handle_normalization)
+        _json = json.dumps(data, cls=CompactJSONEncoder, indent=3, __replacements={':':'='}, __use_commas=False, __callback=handle_normalization)
         results = '''resource "{}" {} {}
             {}
 {}
-'''.format(__resource, __name2, '{', __json, '}')
+'''.format(resource, name2, '{', snip_surrounding_chars(_json), '}')
         return results
 
 
