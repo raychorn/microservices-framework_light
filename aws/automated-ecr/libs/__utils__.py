@@ -12,6 +12,24 @@ default_timestamp = lambda t:t.isoformat().replace(':', '').replace('-','').spli
 
 unpack = lambda l:l[0] if (isinstance(l, list) and (len(l) > 0)) else l
 
+
+def reformat_text(s, width=80):
+    words = s.split()
+    rows = []
+    aLine = []
+    aLine_width = 0
+    while (len(words) > 0):
+        w = words[0]
+        del words[0]
+        aLine.append(w)
+        aLine_width += len(w) + 1
+        if (aLine_width >= width - ((len(words[0]) + 1) if (len(words) > 0) else 0)):
+            rows.append(' '.join(aLine))
+            aLine = []
+            aLine_width = 0
+    return rows
+
+
 def load_docker_compose(fpath, logger=None):
     import yaml
     

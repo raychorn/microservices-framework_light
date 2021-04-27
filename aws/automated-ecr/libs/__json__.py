@@ -275,20 +275,22 @@ def get_terraform_file_contents(docker_compose_data, aws_ecs_cluster_name=None, 
     resource.kwargs['container_definitions'] = container_definitions
     resource.kwargs['requires_compatibilities'] = ["FARGATE"]
     resource.kwargs['network_mode'] = "awsvpc"
-    resource.kwargs['execution_role_arn'] = "${aws_iam_role.ecsTaskExecutionRole.arn}"
+    #resource.kwargs['execution_role_arn'] = "aws_iam_role.ecsTaskExecutionRole.arn"
     tf.saveResource(resource=resource)
 
-    resource = tf.addResource(resource='aws_iam_role', name='ecsTaskExecutionRole')
-    resource.kwargs['assume_role_policy'] = "${data.aws_iam_policy_document.assume_role_policy.json}"
-    tf.saveResource(resource=resource)
+    if (0):
+        resource = tf.addResource(resource='aws_iam_role', name='ecsTaskExecutionRole')
+        resource.kwargs['assume_role_policy'] = "data.aws_iam_policy_document.assume_role_policy.json"
+        tf.saveResource(resource=resource)
 
-    resource = tf.addData(resource='aws_iam_policy_document', name='assume_role_policy')
-    resource.kwargs['statement'] = {}
-    resource.kwargs['statement']['actions'] = ["sts:AssumeRole"]
-    resource.kwargs['statement']['principals'] = {}
-    resource.kwargs['statement']['principals']['type'] = "Service"
-    resource.kwargs['statement']['principals']['identifiers'] = ["ecs-tasks.amazonaws.com"]
-    tf.saveResource(resource=resource)
+    if (0):
+        resource = tf.addData(resource='aws_iam_policy_document', name='assume_role_policy')
+        resource.kwargs['statement'] = {}
+        resource.kwargs['statement']['actions'] = ["sts:AssumeRole"]
+        resource.kwargs['statement']['principals'] = {}
+        resource.kwargs['statement']['principals']['type'] = "Service"
+        resource.kwargs['statement']['principals']['identifiers'] = ["ecs-tasks.amazonaws.com"]
+        tf.saveResource(resource=resource)
 
     return tf.content
 

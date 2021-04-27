@@ -17,6 +17,7 @@ import base64
 import mujson as json
 
 from libs.__utils__ import unpack
+from libs.__utils__ import reformat_text
 from libs.__utils__ import get_ecr_client
 from libs.__utils__ import default_timestamp
 from libs.__utils__ import load_docker_compose
@@ -666,16 +667,44 @@ if (__name__ == '__main__'):
             save_docker_compose_data(__docker_compose_location, __json)
         container_definitions = get_container_definitions_from(docker_compose_data, source=os.path.dirname(__docker_compose_location), aws_creds=aws_creds, aws_config=aws_config)
         logger.info('END!!! Reading "{}".'.format(__docker_compose_location))
-        
-        __terraform_main_tf = os.sep.join([terraform_root, 'main.tf'])
-        with open(__terraform_main_tf, 'w') as fOut:
-            __content = get_terraform_file_contents(docker_compose_data, aws_ecs_cluster_name=__aws_ecs_cluster_name, aws_ecs_repo_name=__aws_ecs_repo_name, docker_compose_location=__docker_compose_location, aws_creds=aws_creds, aws_config=aws_config, aws_creds_src=__aws_creds_src__, aws_config_src=__aws_config_src__, aws_default_region=__aws_default_region__, aws_cli_ecr_describe_repos=__aws_cli_ecr_describe_repos__)
-            print(__content, file=fOut)
-        
-        ret_code, out, err = tf.cmd('validate -json', capture_output=True)
-        logger.info('terraform validate -> ret code -> {} err -> {} out -> {}'.format(ret_code, err, out))
 
-        logger.info('terraform init -> {}'.format(' '.join([str(r).replace('\n', ' ').strip() for r in resp])))
+        was_exception = False        
+        try:
+            __terraform_main_tf = os.sep.join([terraform_root, 'main.tf'])
+            with open(__terraform_main_tf, 'w') as fOut:
+                __content = get_terraform_file_contents(docker_compose_data, aws_ecs_cluster_name=__aws_ecs_cluster_name, aws_ecs_repo_name=__aws_ecs_repo_name, docker_compose_location=__docker_compose_location, aws_creds=aws_creds, aws_config=aws_config, aws_creds_src=__aws_creds_src__, aws_config_src=__aws_config_src__, aws_default_region=__aws_default_region__, aws_cli_ecr_describe_repos=__aws_cli_ecr_describe_repos__)
+                print(__content, file=fOut)
+        except Exception as ex:
+            was_exception = True
+            extype, ex, tb = sys.exc_info()
+            logger.exception('EXCEPTION -> {}'.format(__terraform_main_tf), ex)
+        finally:
+            if (was_exception):
+                logger.info('terraform file EXCEPTION!')
+            else:
+                logger.info('terraform saved -> "{}"'.format(__terraform_main_tf))
+        
+        ret_code, s_out, err = tf.cmd('validate -json', capture_output=True)
+        logger.info('terraform validate -> ret code -> {} err -> {}'.format(ret_code, err))
+
+        was_exception = False
+        try:
+            __terraform_main_out_tf = os.sep.join([terraform_root, 'main_tf.json'])
+            with open(__terraform_main_out_tf, 'w') as fOut:
+                print(s_out, file=fOut)
+        except Exception as ex:
+            was_exception = True
+            extype, ex, tb = sys.exc_info()
+            logger.exception('EXCEPTION -> {}'.format(__terraform_main_out_tf), ex)
+        finally:
+            if (was_exception):
+                logger.info('terraform file validation EXCEPTION!')
+            else:
+                logger.info('terraform validation saved -> "{}"'.format(__terraform_main_out_tf))
+
+        s_text = ' '.join([str(r).replace('\n', ' ').strip() for r in resp])
+        rows_text = reformat_text(s_text, width=120)
+        logger.info('terraform init -> \n{}'.format('\n'.join(rows_text)))
         logger.info('END!!! Terraform Processing')
         
     logger.info('"{}" is DONE!'.format(sys.argv[0]))
