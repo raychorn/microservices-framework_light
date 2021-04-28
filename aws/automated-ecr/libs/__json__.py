@@ -86,18 +86,21 @@ class CompactJSONEncoder(json.JSONEncoder):
         self.__use_commas = kwargs.get('__use_commas')
         if ('__use_commas' in list(kwargs.keys())):
             del kwargs['__use_commas']
+        self.__use_commas_exceptions = kwargs.get('__use_commas_exceptions')
+        if ('__use_commas_exceptions' in list(kwargs.keys())):
+            del kwargs['__use_commas_exceptions']
         super().__init__(*args, **kwargs)
         self.indent if (self.indent) else 0
         self.indentation_level = 0
 
-    def encode(self, o):
+    def encode(self, o, use_commas=False):
         """Encode JSON object *o* with respect to single line lists."""
         if isinstance(o, (list, tuple)):
             if self._put_on_single_line(o):
                 return "[" + ", ".join(self.encode(el) for el in o) + "]"
             else:
                 self.indentation_level += 1
-                output = [self.indent_str + self.encode(el) for el in o]
+                output = [self.indent_str + self.encode(el, use_commas=use_commas) for el in o]
                 self.indentation_level -= 1
                 return "[\n" + ",\n".join(output) + "\n" + self.indent_str + "]"
         elif isinstance(o, dict):
@@ -113,14 +116,16 @@ class CompactJSONEncoder(json.JSONEncoder):
                                 print(ex)
                 return value
             
-            def normalize_commas(value):
-                return value.replace(',', '') if (not self.__use_commas) else value
+            def normalize_commas(value, use_commas=self.__use_commas):
+                return value.replace(',', '') if (not use_commas) else value
             if o:
                 if self._put_on_single_line(o):
-                    return "{ " + normalize_commas(", ").join(normalize(f"{self.encode(k)}: {self.encode(el)}") for k, el in o.items()) + " }"
+                    return "{ " + normalize_commas(", ", use_commas=use_commas).join(normalize(f"{self.encode(k)}: {self.encode(el)}") for k, el in o.items()) + " }"
                 else:
                     self.indentation_level += 1
-                    output = [self.indent_str + normalize(f"{json.dumps(k)}: {self.encode(v)}") for k, v in o.items()]
+                    f = self.__use_commas_exceptions
+                    f_use_commas = self.__use_commas
+                    output = [self.indent_str + normalize(f"{json.dumps(k)}: {self.encode(v, use_commas=f.get(k, f_use_commas))}") for k, v in o.items()]
                     self.indentation_level -= 1
                     return "{\n" + normalize_commas(",\n").join(output) + "\n" + self.indent_str + "}"
             else:
@@ -184,7 +189,10 @@ class TerraformFile(TerraformSectionFactory, dict):
         data = {}
         for k,v in kwargs.items():
             data[k] = v
-        _json = json.dumps(data, cls=CompactJSONEncoder, indent=3, __replacements={':':'='}, __use_commas=False, __callback=handle_normalization)
+        _use_commas_exceptions = None
+        if ('container_definitions' in list(data.keys())):
+            _use_commas_exceptions = {'portMappings': True}
+        _json = json.dumps(data, cls=CompactJSONEncoder, indent=3, __replacements={':':'='}, __use_commas=False, __use_commas_exceptions=_use_commas_exceptions, __callback=handle_normalization)
         results = '''resource "{}" {} {}
             {}
 {}
