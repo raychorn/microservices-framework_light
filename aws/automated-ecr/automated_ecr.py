@@ -689,7 +689,7 @@ if (__name__ == '__main__'):
         try:
             __terraform_main_tf = os.sep.join([terraform_root, 'main.tf'])
             with open(__terraform_main_tf, 'w') as fOut:
-                __content = get_terraform_file_contents(docker_compose_data, aws_ecs_cluster_name=__aws_ecs_cluster_name, aws_ecs_repo_name=__aws_ecs_repo_name, docker_compose_location=__docker_compose_location, aws_creds=aws_creds, aws_config=aws_config, aws_creds_src=__aws_creds_src__, aws_config_src=__aws_config_src__, aws_default_region=__aws_default_region__, aws_cli_ecr_describe_repos=__aws_cli_ecr_describe_repos__)
+                __content = get_terraform_file_contents(docker_compose_data, aws_ecs_cluster_name=__aws_ecs_cluster_name, aws_ecs_repo_name=__aws_ecs_repo_name, docker_compose_location=__docker_compose_location, aws_creds=aws_creds, aws_config=aws_config, aws_creds_src=__aws_creds_src__, aws_config_src=__aws_config_src__, aws_default_region=__aws_default_region__, aws_cli_ecr_describe_repos=__aws_cli_ecr_describe_repos__, aws_ecs_compute_engine=__aws_ecs_compute_engine)
                 print(__content, file=fOut)
         except Exception as ex:
             was_exception = True

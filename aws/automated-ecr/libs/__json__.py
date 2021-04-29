@@ -269,7 +269,7 @@ class TerraformFile(TerraformSectionFactory, dict):
         return ''.join(results)
 
 
-def get_terraform_file_contents(docker_compose_data, aws_ecs_cluster_name=None, aws_ecs_repo_name=None, docker_compose_location=None, aws_creds=None, aws_config=None, aws_creds_src=None, aws_config_src=None, aws_default_region=None, aws_cli_ecr_describe_repos=None):
+def get_terraform_file_contents(docker_compose_data, aws_ecs_cluster_name=None, aws_ecs_repo_name=None, docker_compose_location=None, aws_creds=None, aws_config=None, aws_creds_src=None, aws_config_src=None, aws_default_region=None, aws_cli_ecr_describe_repos=None, aws_ecs_compute_engine=None):
     tf = TerraformFile()
     tf.addProvider(provider='aws', region='us-east-2')
     tf.addResource(resource='aws_ecr_repository', name=aws_ecs_repo_name)
@@ -304,7 +304,7 @@ def get_terraform_file_contents(docker_compose_data, aws_ecs_cluster_name=None, 
     resource.kwargs['name'] = "my-first-service"
     resource.kwargs['cluster'] = "aws_ecs_cluster.my_cluster.id"
     resource.kwargs['task_definition'] = "aws_ecs_task_definition.my_first_task.arn"
-    resource.kwargs['launch_type'] = "FARGATE"
+    resource.kwargs['launch_type'] = aws_ecs_compute_engine
     resource.kwargs['desired_count'] = 3
     tf.saveResource(resource=resource)
 
