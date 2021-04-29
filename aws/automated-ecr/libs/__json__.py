@@ -124,6 +124,8 @@ class CompactJSONEncoder(json.JSONEncoder):
                 else:
                     self.indentation_level += 1
                     f = self.__use_commas_exceptions
+                    if (f is None):
+                        f = {}
                     f_use_commas = self.__use_commas
                     output = [self.indent_str + normalize(f"{json.dumps(k)}: {self.encode(v, use_commas=f.get(k, f_use_commas))}") for k, v in o.items()]
                     self.indentation_level -= 1
