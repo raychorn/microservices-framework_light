@@ -158,11 +158,14 @@ __aws_ecs_repo_command_line_option__ = "--aws_ecs_repo" # must specify a repo na
 __aws_ecs_cluster_command_line_option__ = "--aws_ecs_cluster" # must specify a cluster name
 __docker_command_line_option__ = "--docker" # must specify a path for terraform processing
 __json_command_line_option__ = "--json"
+__aws_ecs_compute_engine_command_line_option__ = "--aws_compute_engine" # defaults to FARGATE
 
 __acceptable_terraform_providers__ = ['aws','azure','gcloud']
 
 __terraform_directory__ = 'terraform'
 __aws_default_region__ = 'us-east-2'
+
+__aws_ecs_compute_engine_default__ = "FARGATE"
 
 __docker_compose_filename__ = 'docker-compose.yml'
 
@@ -322,6 +325,7 @@ if (__name__ == '__main__'):
         sys.argv.append('{}={}'.format(__aws_ecs_cluster_command_line_option__, 'my_cluster1'))
         sys.argv.append('{}={}'.format(__aws_ecs_repo_command_line_option__, 'my_first_ecr_repo'))
         sys.argv.append('{}={}'.format(__docker_command_line_option__, '/home/raychorn/projects/python-projects/sample-docker-data'))
+        #sys.argv.append('{}={}'.format(__aws_ecs_compute_engine_command_line_option__, __aws_ecs_compute_engine_default__))
         #sys.argv.append(__json_command_line_option__)
     
     is_verbose = any([str(arg).find(__verbose_command_line_option__) > -1 for arg in sys.argv])
@@ -370,18 +374,30 @@ if (__name__ == '__main__'):
         assert (is_really_something(__terraform_provider_flag, str)), 'Missing terraform provider flag and this is a programming issue.'
         logger.info('terraform provider: {}'.format(__terraform_provider))
 
-    __aws_ecs_cluster_flag, __aws_ecs_cluster_name = tuple([None, None])
+    __aws_ecs_cluster_flag = None
+    __aws_ecs_cluster_name = None
     if (is_terraform):
         __aws_ecs_cluster_flag, __aws_ecs_cluster_name = parse_complex_command_line_option(sys.argv, find_something=__aws_ecs_cluster_command_line_option__)
         assert (is_really_something(__aws_ecs_cluster_name, str)), 'Missing terrform aws_ecs_cluster.'
         logger.info('terraform aws_ecs_cluster is : {}'.format(__aws_ecs_cluster_name))
         
-    __aws_ecs_repo_flag, __aws_ecs_repo_name = tuple([None, None])
+    __aws_ecs_repo_flag = None
+    __aws_ecs_repo_name = None
     if (is_terraform):
         __aws_ecs_repo_flag, __aws_ecs_repo_name = parse_complex_command_line_option(sys.argv, find_something=__aws_ecs_repo_command_line_option__)
         assert (is_really_something(__aws_ecs_repo_name, str)), 'Missing terrform aws_ecs_repo_name.'
         logger.info('terraform aws_ecs_repo_name is : {}'.format(__aws_ecs_repo_name))
-            
+        
+    __aws_ecs_compute_engine_flag = None
+    __aws_ecs_compute_engine = __aws_ecs_compute_engine_default__
+    if (is_terraform):
+        aws_ecs_compute_engine_flag, aws_ecs_compute_engine = parse_complex_command_line_option(sys.argv, find_something=__aws_ecs_compute_engine_command_line_option__)
+        if (is_really_something(aws_ecs_compute_engine_flag, str)) and (is_really_something(aws_ecs_compute_engine, str)):
+            __aws_ecs_compute_engine_flag = aws_ecs_compute_engine_flag
+            __aws_ecs_compute_engine = aws_ecs_compute_engine
+        assert (is_really_something(__aws_ecs_compute_engine, str)), 'Missing terrform __aws_ecs_compute_engine.'
+        logger.info('terraform __aws_ecs_compute_engine is : {}'.format(__aws_ecs_compute_engine))
+
     if (is_terraform):
         __docker_flag, __docker_root = parse_complex_command_line_option(sys.argv, find_something=__docker_command_line_option__)
         assert (is_really_something(__docker_flag, str)), 'Missing terrform docker command line option.'
@@ -391,6 +407,7 @@ if (__name__ == '__main__'):
         assert (os.path.exists(__docker_compose_location) and os.path.isfile(__docker_compose_location)), 'Cannot find terrform docker-compose file (Please place your "{}" in the "{}" directory).'.format(__docker_compose_filename__, __docker_root)
         logger.info('terraform docker path is : {}'.format(__docker_root))
         logger.info('terraform docker-dompose file is : {}'.format(__docker_compose_location))
+        assert (is_really_something(__aws_ecs_compute_engine, str)), 'Missing terrform __aws_ecs_compute_engine command line option.'
         
     is_json = any([str(arg).find(__json_command_line_option__) > -1 for arg in sys.argv])
     if (is_json):
@@ -704,7 +721,26 @@ if (__name__ == '__main__'):
 
         s_text = ' '.join([str(r).replace('\n', ' ').strip() for r in resp])
         rows_text = reformat_text(s_text, width=120)
-        logger.info('terraform init -> \n{}'.format('\n'.join(rows_text)))
+        s_out = '\n'.join(rows_text)
+        
+        if (is_verbose):
+            logger.info('terraform init -> \n{}'.format(s_out))
+
+        was_exception = False
+        try:
+            __terraform_validation_report = os.sep.join([terraform_root, 'main_tf-validation.txt'])
+            with open(__terraform_validation_report, 'w') as fOut:
+                print(s_out, file=fOut)
+        except Exception as ex:
+            was_exception = True
+            extype, ex, tb = sys.exc_info()
+            logger.exception('EXCEPTION -> {}'.format(__terraform_validation_report), ex)
+        finally:
+            if (was_exception):
+                logger.info('terraform file validation report EXCEPTION!')
+            else:
+                logger.info('terraform validation report saved -> "{}"'.format(__terraform_validation_report))
+
         logger.info('END!!! Terraform Processing')
         
     logger.info('"{}" is DONE!'.format(sys.argv[0]))

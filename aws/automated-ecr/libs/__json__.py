@@ -300,6 +300,14 @@ def get_terraform_file_contents(docker_compose_data, aws_ecs_cluster_name=None, 
         resource.kwargs['statement']['principals']['identifiers'] = ["ecs-tasks.amazonaws.com"]
         tf.saveResource(resource=resource)
 
+    resource = tf.addData(resource='aws_ecs_service', name='my_first_service')
+    resource.kwargs['name'] = "my-first-service"
+    resource.kwargs['cluster'] = "aws_ecs_cluster.my_cluster.id"
+    resource.kwargs['task_definition'] = "aws_ecs_task_definition.my_first_task.arn"
+    resource.kwargs['launch_type'] = "FARGATE"
+    resource.kwargs['desired_count'] = 3
+    tf.saveResource(resource=resource)
+
     return tf.content
 
     

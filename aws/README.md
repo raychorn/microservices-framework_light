@@ -23,6 +23,7 @@
     - [--terraform=/dir](#--terraformdir)
     - [--provider=aws|azure|gcloud](#--providerawsazuregcloud)
     - [--aws_ecs_cluster=cluster-name](#--aws_ecs_clustercluster-name)
+    - [--aws_compute_engine=FARGATE](#--aws_compute_enginefargate)
     - [--json](#--json)
   - [Typical Usage(s)](#typical-usages)
     - [Get Help](#get-help)
@@ -156,6 +157,12 @@ If used this option must appear AFTER the "--terraform" option and must be one o
 
 ```
 If used this option must appear AFTER the "--terraform" option and must identify the name for the ECS cluster.
+```
+
+### --aws_compute_engine=FARGATE
+
+```
+This option defaults to FARGATE and is an option for future use.
 ```
 
 ### --json
