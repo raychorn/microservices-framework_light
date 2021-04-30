@@ -197,14 +197,27 @@ class TerraformFile(TerraformSectionFactory, dict):
         for k,v in kwargs.items():
             if (k not in _ignores):
                 data[k] = v
+        container_definitions = None
+        s_container_definitions = ''
         _use_commas_exceptions = None
         if ('container_definitions' in list(data.keys())):
+            container_definitions = data.get('container_definitions')
+            if (container_definitions):
+                s_container_definitions = '\ncontainer_definitions = <<DEFINITION\n'
+                for cdef in container_definitions:
+                    container_definition_env = cdef.get('environment')
+                    if (container_definition_env):
+                        del cdef['environment']
+                    s_json = json.dumps(cdef, cls=CompactJSONEncoder, indent=3, __replacements={}, __use_commas=True)
+                    s_container_definitions = s_container_definitions + s_json + '\n'
+                s_container_definitions = s_container_definitions + "DEFINITION" + '\n'
+                del data['container_definitions']
             _use_commas_exceptions = {'portMappings': True}
         _json = json.dumps(data, cls=CompactJSONEncoder, indent=3, __replacements={':':'='}, __use_commas=False, __use_commas_exceptions=_use_commas_exceptions, __callback=handle_normalization)
         results = '''resource "{}" {} {}
-            {}
+            {}{}
 {}
-'''.format(resource, name2, '{', snip_surrounding_chars(_json), '}')
+'''.format(resource, name2, '{', snip_surrounding_chars(_json), s_container_definitions, '}')
         return results
 
 
