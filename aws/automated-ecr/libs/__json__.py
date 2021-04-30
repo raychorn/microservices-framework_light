@@ -188,9 +188,15 @@ class TerraformFile(TerraformSectionFactory, dict):
         if (is_really_something(name2, str)):
             del kwargs['name2']
             kwargs['name'] = name2
+        _ignores = kwargs.get('kwargs', {}).get('ignores', [])
+        if ('ignores' in list(kwargs.keys())):
+            del kwargs['kwargs']
+        _ignores = _ignores if (isinstance(_ignores, list)) else []
+        _ignores = list(set(_ignores).union(set(['kwargs'])))
         data = {}
         for k,v in kwargs.items():
-            data[k] = v
+            if (k not in _ignores):
+                data[k] = v
         _use_commas_exceptions = None
         if ('container_definitions' in list(data.keys())):
             _use_commas_exceptions = {'portMappings': True}
@@ -218,7 +224,7 @@ class TerraformFile(TerraformSectionFactory, dict):
         return self['provider']
 
 
-    def addResource(self, resource='aws_ecr_repository', name='my_first_ecr_repo', callback=None):
+    def addResource(self, resource='aws_ecr_repository', name='my_first_ecr_repo', callback=None, ignores=None):
         '''
             resource "aws_ecr_repository" "my_first_ecr_repo" {
                 name = "my-first-ecr-repo" # Naming my repository
@@ -226,7 +232,7 @@ class TerraformFile(TerraformSectionFactory, dict):
         '''
         if (not callable(callback)):
             callback = TerraformFile.__renderResource
-        self[resource] = self.section_named('resource', callback=callback, resource=resource, name2=name)
+        self[resource] = self.section_named('resource', callback=callback, resource=resource, name2=name, kwargs={'ignores':ignores})
         return self[resource]
 
 
@@ -277,7 +283,7 @@ def get_terraform_file_contents(docker_compose_data, aws_ecs_cluster_name=None, 
     tf.addResource(resource='aws_ecr_repository', name=aws_ecs_repo_name)
     tf.addResource(resource='aws_ecs_cluster', name=aws_ecs_cluster_name)
     
-    resource = tf.addResource(resource='aws_ecs_task_definition', name='my_first_task')
+    resource = tf.addResource(resource='aws_ecs_task_definition', name='my_first_task', ignores=['name'])
     resource.kwargs['family'] = 'my-first-task'
     
     container_definitions = get_container_definitions_from(docker_compose_data, source=os.path.dirname(docker_compose_location), aws_creds=aws_creds, aws_config=aws_config, aws_creds_src=aws_creds_src, aws_config_src=aws_config_src, aws_default_region=aws_default_region, aws_cli_ecr_describe_repos=aws_cli_ecr_describe_repos)
