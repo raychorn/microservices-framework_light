@@ -199,17 +199,26 @@ class TerraformFile(TerraformSectionFactory, dict):
                 data[k] = v
         container_definitions = None
         s_container_definitions = ''
+        _container_definitions = []
         _use_commas_exceptions = None
         if ('container_definitions' in list(data.keys())):
             container_definitions = data.get('container_definitions')
             if (container_definitions):
+                has_many_container_definitions = len(container_definitions) > 1
                 s_container_definitions = '\ncontainer_definitions = <<DEFINITION\n'
                 for cdef in container_definitions:
                     container_definition_env = cdef.get('environment')
                     if (container_definition_env):
                         del cdef['environment']
-                    s_json = json.dumps(cdef, cls=CompactJSONEncoder, indent=3, __replacements={}, __use_commas=True)
-                    s_container_definitions = s_container_definitions + s_json + '\n'
+                    container_definition_ports = cdef.get('portMappings')
+                    if (container_definition_ports):
+                        del cdef['portMappings']
+                    container_definition_memory = cdef.get('memory')
+                    if (container_definition_memory):
+                        cdef['memory'] = eval(''.join([ch for ch in container_definition_memory if (str(ch).isdigit())]))
+                    _container_definitions.append(cdef)
+                s_json = json.dumps(_container_definitions, cls=CompactJSONEncoder, indent=3, __replacements={}, __use_commas=True)
+                s_container_definitions = s_container_definitions + s_json + '\n'
                 s_container_definitions = s_container_definitions + "DEFINITION" + '\n'
                 del data['container_definitions']
             _use_commas_exceptions = {'portMappings': True}
