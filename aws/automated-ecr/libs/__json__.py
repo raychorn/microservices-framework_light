@@ -161,6 +161,23 @@ class TerraformSectionFactory(object):
         return Section(name=name, callback=callback, kwargs=kwargs)
 
 
+def render_terraform_vars(env):
+    '''
+    default = [
+    {
+    "name" = "BUCKET",
+    "value" = "test"
+    },{
+    "name" = "BUCKET1",
+    "value" = "test1"
+    }]
+    '''
+    vars = []
+    for k,v in env.items() if (isinstance(env, dict)) else env:
+        vars.append({'name': k, 'value': v})
+    return vars
+
+
 class TerraformFile(TerraformSectionFactory, dict):
     '''
     dict of named tuples handles output.
@@ -209,10 +226,10 @@ class TerraformFile(TerraformSectionFactory, dict):
                 for cdef in container_definitions:
                     container_definition_env = cdef.get('environment')
                     if (container_definition_env):
-                        del cdef['environment']
+                        cdef['environment'] = render_terraform_vars(container_definition_env)
                     container_definition_ports = cdef.get('portMappings')
                     if (container_definition_ports):
-                        del cdef['portMappings']
+                        cdef['portMappings'] = render_terraform_vars(container_definition_ports)
                     container_definition_memory = cdef.get('memory')
                     if (container_definition_memory):
                         cdef['memory'] = eval(''.join([ch for ch in container_definition_memory if (str(ch).isdigit())]))
