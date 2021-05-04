@@ -682,7 +682,6 @@ if (__name__ == '__main__'):
         if (is_json):
             __json = json.dumps(docker_compose_data, indent=3)
             save_docker_compose_data(__docker_compose_location, __json)
-        #container_definitions = get_container_definitions_from(docker_compose_data, source=os.path.dirname(__docker_compose_location), aws_creds=aws_creds, aws_config=aws_config)
         logger.info('END!!! Reading "{}".'.format(__docker_compose_location))
 
         was_exception = False        
