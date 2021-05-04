@@ -251,6 +251,39 @@ class TerraformFile(TerraformSectionFactory, dict):
         return TerraformFile.__renderResource(**kwargs)
 
 
+    def __renderInit(**kwargs):
+        results = ''
+        required_providers = kwargs.get('required_providers')
+        if (is_really_something(required_providers, str)):
+            results ='''terraform {
+    required_providers {
+        aws = {
+            source = "hashicorp/aws"
+            version = "3.38.0"
+        }
+    }
+}
+'''
+        return results
+
+
+    def addInit(self, terraform='init', required_providers='aws', callback=None):
+        '''
+            terraform {
+                required_providers {
+                    aws = {
+                        source = "hashicorp/aws"
+                        version = "3.38.0"
+                    }
+                }
+            }
+        '''
+        if (not callable(callback)):
+            callback = TerraformFile.__renderInit
+        self['terraform'] = self.section_named('required_providers', callback=callback, required_providers=required_providers)
+        return self['terraform']
+
+
     def addProvider(self, provider='aws', region='us-east-2', callback=None):
         '''
             provider "aws" {
@@ -316,8 +349,17 @@ class TerraformFile(TerraformSectionFactory, dict):
         return ''.join(results)
 
 
-def get_terraform_file_contents(docker_compose_data, aws_ecs_cluster_name=None, aws_ecs_repo_name=None, docker_compose_location=None, aws_creds=None, aws_config=None, aws_creds_src=None, aws_config_src=None, aws_default_region=None, aws_cli_ecr_describe_repos=None, aws_ecs_compute_engine=None):
+def get_terraform_init_file_contents(logger=None):
     tf = TerraformFile()
+    tf.addInit()
+    return tf.content
+
+
+def get_terraform_file_contents(docker_compose_data, do_init=False, aws_ecs_cluster_name=None, aws_ecs_repo_name=None, docker_compose_location=None, aws_creds=None, aws_config=None, aws_creds_src=None, aws_config_src=None, aws_default_region=None, aws_cli_ecr_describe_repos=None, aws_ecs_compute_engine=None):
+    tf = TerraformFile()
+    if (do_init):
+        tf.addInit()
+
     tf.addProvider(provider='aws', region='us-east-2')
     tf.addResource(resource='aws_ecr_repository', name=aws_ecs_repo_name)
     tf.addResource(resource='aws_ecs_cluster', name=aws_ecs_cluster_name)

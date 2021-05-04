@@ -19,6 +19,7 @@
     - [--scanOnPush](#--scanonpush)
     - [--timetags](#--timetags)
     - [--detailed](#--detailed)
+    - [--aws_region](#--aws_region)
     - [--terraform](#--terraform)
     - [--terraform=/dir](#--terraformdir)
     - [--provider=aws|azure|gcloud](#--providerawsazuregcloud)
@@ -80,7 +81,7 @@ sudo ./ecr-push-all.sh
 3. Push your Images into ECR by issuing the following command:
 
 ```
-./ecr-push-all.sh [--help] [--verbose] [--push-ecr] [--clean-ecr] [--single] [--scanOnPush] [--timetags] [--detailed] [--terraform] [--terraform=/dir] [--provider=aws|azure|gcloud] [--aws_ecs_cluster=cluster-name] [--json]
+./ecr-push-all.sh [--help] [--verbose] [--push-ecr] [--clean-ecr] [--single] [--scanOnPush] [--timetags] [--detailed] [--terraform] [--terraform=/dir] [--provider=aws|azure|gcloud] [--aws_ecs_cluster=cluster-name] [--json] [--aws_region]
 ```
 
 ## Usage
@@ -131,6 +132,11 @@ Appends a pseudo-Timestamp on every Image to force all Images to be pushed even 
 
 ```
 Saves a detailed report for each Image pushed. Detailed reports can be found in the "./aws/automated-ecr/reports" directory.
+```
+
+### --aws_region
+```
+Overrides the AWS region found in the typical AWS Config file, if used.
 ```
 
 ### --terraform

@@ -30,6 +30,7 @@ from libs.__utils__ import is_really_something_with_stuff
 from libs.__utils__ import get_container_definitions_from
 
 from libs.__json__ import get_terraform_file_contents
+from libs.__json__ import get_terraform_init_file_contents
 
 __docker_config_json__ = os.path.expanduser('~/.docker/config.json')
 
@@ -159,6 +160,7 @@ __aws_ecs_cluster_command_line_option__ = "--aws_ecs_cluster" # must specify a c
 __docker_command_line_option__ = "--docker" # must specify a path for terraform processing
 __json_command_line_option__ = "--json"
 __aws_ecs_compute_engine_command_line_option__ = "--aws_compute_engine" # defaults to FARGATE
+__aws_default_region_command_line_option__ = "--aws_region" # defaults to us-east-2
 
 __acceptable_terraform_providers__ = ['aws','azure','gcloud']
 
@@ -325,6 +327,7 @@ if (__name__ == '__main__'):
         sys.argv.append('{}={}'.format(__aws_ecs_cluster_command_line_option__, 'my_cluster1'))
         sys.argv.append('{}={}'.format(__aws_ecs_repo_command_line_option__, 'my_first_ecr_repo'))
         sys.argv.append('{}={}'.format(__docker_command_line_option__, '/home/raychorn/projects/python-projects/sample-docker-data'))
+        #sys.argv.append('{}={}'.format(__aws_default_region_command_line_option__, 'us-east-2'))
         #sys.argv.append('{}={}'.format(__aws_ecs_compute_engine_command_line_option__, __aws_ecs_compute_engine_default__))
         #sys.argv.append(__json_command_line_option__)
     
@@ -409,6 +412,8 @@ if (__name__ == '__main__'):
         logger.info('terraform docker-dompose file is : {}'.format(__docker_compose_location))
         assert (is_really_something(__aws_ecs_compute_engine, str)), 'Missing terrform __aws_ecs_compute_engine command line option.'
         
+    __aws_region_flag, __aws_region = parse_complex_command_line_option(sys.argv, find_something=__aws_default_region_command_line_option__)
+        
     is_json = any([str(arg).find(__json_command_line_option__) > -1 for arg in sys.argv])
     if (is_json):
         logger.info('{}'.format(__json_command_line_option__))
@@ -446,6 +451,10 @@ if (__name__ == '__main__'):
 
         __d = aws_config.get(list(aws_config.keys())[0], {})
         __d['region'] = __d.get('region', __aws_default_region__)
+        
+        if (is_really_something(__aws_region_flag, str)):
+            __d['region'] = __aws_region if (is_really_something(__aws_region, str)) else __d.get('region', __aws_default_region__)
+        
         aws_config[list(aws_config.keys())[0]] = __d
         
         if (is_pushing_ecr or is_cleaning_ecr):
@@ -674,6 +683,25 @@ if (__name__ == '__main__'):
         assert os.path.exists(terraform_root), 'Missing the terraform root directory which means something went horribly wrong so cannot proceed.'
         
         from python_terraform import Terraform
+        __terraform_main_tf = os.sep.join([terraform_root, 'main.tf'])
+
+        if (0):
+            logger.info('BEGIN: terraform init.')
+            try:
+                with open(__terraform_main_tf, 'w') as fOut:
+                    __content = get_terraform_init_file_contents(logger=logger)
+                    print(__content, file=fOut)
+            except Exception as ex:
+                was_exception = True
+                extype, ex, tb = sys.exc_info()
+                logger.exception('EXCEPTION -> {}'.format(__terraform_main_tf), ex)
+            finally:
+                if (was_exception):
+                    logger.info('terraform init file EXCEPTION!')
+                else:
+                    logger.info('terraform init saved -> "{}"'.format(__terraform_main_tf))
+            logger.info('END!!! terraform init.')
+
         tf = Terraform(working_dir=terraform_root)
         resp = tf.init(backend=False)
 
@@ -686,9 +714,8 @@ if (__name__ == '__main__'):
 
         was_exception = False        
         try:
-            __terraform_main_tf = os.sep.join([terraform_root, 'main.tf'])
             with open(__terraform_main_tf, 'w') as fOut:
-                __content = get_terraform_file_contents(docker_compose_data, aws_ecs_cluster_name=__aws_ecs_cluster_name, aws_ecs_repo_name=__aws_ecs_repo_name, docker_compose_location=__docker_compose_location, aws_creds=aws_creds, aws_config=aws_config, aws_creds_src=__aws_creds_src__, aws_config_src=__aws_config_src__, aws_default_region=__aws_default_region__, aws_cli_ecr_describe_repos=__aws_cli_ecr_describe_repos__, aws_ecs_compute_engine=__aws_ecs_compute_engine)
+                __content = get_terraform_file_contents(docker_compose_data, do_init=False, aws_ecs_cluster_name=__aws_ecs_cluster_name, aws_ecs_repo_name=__aws_ecs_repo_name, docker_compose_location=__docker_compose_location, aws_creds=aws_creds, aws_config=aws_config, aws_creds_src=__aws_creds_src__, aws_config_src=__aws_config_src__, aws_default_region=__aws_default_region__, aws_cli_ecr_describe_repos=__aws_cli_ecr_describe_repos__, aws_ecs_compute_engine=__aws_ecs_compute_engine)
                 print(__content, file=fOut)
         except Exception as ex:
             was_exception = True
