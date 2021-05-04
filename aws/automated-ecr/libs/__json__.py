@@ -394,7 +394,7 @@ def get_terraform_file_contents(docker_compose_data, do_init=False, aws_ecs_clus
     resource.kwargs['cluster'] = "aws_ecs_cluster.my_cluster.id"
     resource.kwargs['task_definition'] = "aws_ecs_task_definition.my_first_task.arn"
     resource.kwargs['launch_type'] = aws_ecs_compute_engine
-    resource.kwargs['desired_count'] = 3
+    resource.kwargs['desired_count'] = 1
     tf.saveResource(resource=resource)
 
     return tf.content
