@@ -360,7 +360,8 @@ def get_terraform_file_contents(docker_compose_data, do_init=False, aws_ecs_clus
     if (do_init):
         tf.addInit()
 
-    tf.addProvider(provider='aws', region='us-east-2')
+    _default_zone = aws_config.get('default', {}).get('region', 'us-east-2')
+    tf.addProvider(provider='aws', region=_default_zone)
     tf.addResource(resource='aws_ecr_repository', name=aws_ecs_repo_name)
     tf.addResource(resource='aws_ecs_cluster', name=aws_ecs_cluster_name)
     
@@ -395,6 +396,91 @@ def get_terraform_file_contents(docker_compose_data, do_init=False, aws_ecs_clus
     resource.kwargs['task_definition'] = "aws_ecs_task_definition.my_first_task.arn"
     resource.kwargs['launch_type'] = aws_ecs_compute_engine
     resource.kwargs['desired_count'] = 1
+    tf.saveResource(resource=resource)
+
+
+    def handle_aws_default_vpc(**kwargs):
+        '''
+        resource "aws_default_vpc" "default_vpc" {
+        }
+        '''
+        resource = kwargs.get('resource')
+        if (resource):
+            del kwargs['resource']
+        name2 = kwargs.get('name2')
+        if (name2):
+            del kwargs['name2']
+        _kwargs = kwargs.get('kwargs')
+        if (_kwargs):
+            del kwargs['kwargs']
+        resp = 'resource "{}" "{}"'.format(resource, name2)
+        _json = json.dumps(kwargs, cls=CompactJSONEncoder, indent=3, __replacements={':':'='}, __use_commas=False, __callback=handle_quotes_normalization)
+        __is__ = False
+        for i,ch in enumerate(_json):
+            if (ch == '{'):
+                __is__ = True
+                break
+        if (__is__) and (ch == '{'):
+            _json = _json[0:i+1] + '\n' + _json[i+1:]
+        resp += _json + '\n'
+        return resp
+
+
+    resource = tf.addResource(resource='aws_default_vpc', name='default_vpc', callback=handle_aws_default_vpc)
+    tf.saveResource(resource=resource)
+
+
+    #import itertools
+    def enumerateReversed(l):
+        return zip(reversed(range(len(l))), reversed(l))
+
+
+    def handle_quotes_normalization(**kwargs):
+        ch = kwargs.get('ch')
+        toks = kwargs.get('toks', [])
+        replacements = kwargs.get('replacements', {})
+        for k,v in replacements.items():
+            ch = ch.replace(k, v)
+        toks[0] = toks[0].replace('"', '')
+        return ch.join(toks)
+
+
+    def handle_aws_default_subnet(**kwargs):
+        '''
+        resource "aws_default_subnet" "default_subnet_a" {
+            availability_zone = "eu-west-2a"
+        }
+        '''
+        resource = kwargs.get('resource')
+        if (resource):
+            del kwargs['resource']
+        name2 = kwargs.get('name2')
+        if (name2):
+            del kwargs['name2']
+        _kwargs = kwargs.get('kwargs')
+        if (_kwargs):
+            del kwargs['kwargs']
+        resp = 'resource "{}" "{}"'.format(resource, name2)
+        _json = json.dumps(kwargs, cls=CompactJSONEncoder, indent=3, __replacements={':':'='}, __use_commas=False, __callback=handle_quotes_normalization)
+        __is__ = False
+        for i,ch in enumerate(_json):
+            if (ch == '{'):
+                __is__ = True
+                break
+        if (__is__) and (ch == '{'):
+            _json = _json[0:i+1] + '\n' + _json[i+1:]
+        __is__ = False
+        for i,ch in enumerateReversed(_json):
+            if (ch == '}'):
+                __is__ = True
+                break
+        if (__is__) and (ch == '}'):
+            _json = _json[0:i] + '\n' + _json[i:]
+        resp += _json
+        return resp # TerraformFile.__renderResource(**kwargs)
+    
+    resource = tf.addResource(resource='aws_default_subnet', name='default_subnet_a', callback=handle_aws_default_subnet)
+    resource.kwargs['availability_zone'] = _default_zone
     tf.saveResource(resource=resource)
 
     return tf.content
