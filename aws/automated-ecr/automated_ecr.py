@@ -712,7 +712,7 @@ if (__name__ == '__main__'):
             save_docker_compose_data(__docker_compose_location, __json)
         logger.info('END!!! Reading "{}".'.format(__docker_compose_location))
 
-        was_exception = False        
+        was_exception = False
         try:
             with open(__terraform_main_tf, 'w') as fOut:
                 __content = get_terraform_file_contents(docker_compose_data, do_init=False, aws_ecs_cluster_name=__aws_ecs_cluster_name, aws_ecs_repo_name=__aws_ecs_repo_name, docker_compose_location=__docker_compose_location, aws_creds=aws_creds, aws_config=aws_config, aws_creds_src=__aws_creds_src__, aws_config_src=__aws_config_src__, aws_default_region=__aws_default_region__, aws_cli_ecr_describe_repos=__aws_cli_ecr_describe_repos__, aws_ecs_compute_engine=__aws_ecs_compute_engine)

@@ -3,6 +3,8 @@ import sys
 import json
 import traceback
 
+import re
+
 from logging import exception
 from typing import Union
 
@@ -77,18 +79,21 @@ class CompactJSONEncoder(json.JSONEncoder):
     INDENTATION_CHAR = " "
 
     def __init__(self, *args, **kwargs):
-        self.__replacements = kwargs.get('__replacements')
+        self._replacements = kwargs.get('__replacements')
         if ('__replacements' in list(kwargs.keys())):
             del kwargs['__replacements']
-        self.__callback = kwargs.get('__callback')
+        self._callback = kwargs.get('__callback')
         if ('__callback' in list(kwargs.keys())):
             del kwargs['__callback']
-        self.__use_commas = kwargs.get('__use_commas')
+        self._use_commas = kwargs.get('__use_commas')
         if ('__use_commas' in list(kwargs.keys())):
             del kwargs['__use_commas']
-        self.__use_commas_exceptions = kwargs.get('__use_commas_exceptions')
+        self._use_commas_exceptions = kwargs.get('__use_commas_exceptions')
         if ('__use_commas_exceptions' in list(kwargs.keys())):
             del kwargs['__use_commas_exceptions']
+        self._use_equals_exceptions = kwargs.get('_use_equals_exceptions')
+        if ('_use_equals_exceptions' in list(kwargs.keys())):
+            del kwargs['_use_equals_exceptions']
         super().__init__(*args, **kwargs)
         self.indent if (self.indent) else 0
         self.indentation_level = 0
@@ -105,30 +110,44 @@ class CompactJSONEncoder(json.JSONEncoder):
                 return "[\n" + ",\n".join(output) + "\n" + self.indent_str + "]"
         elif isinstance(o, dict):
             def normalize(value):
-                __splits = list(self.__replacements.keys())
+                __splits = list(self._replacements.keys())
                 for s in __splits:
                     __toks = value.split(s)
                     if (len(__toks) > 1):
-                        if (callable(self.__callback)):
+                        if (callable(self._callback)):
                             try:
-                                value = self.__callback(ch=s, toks=__toks, replacements={s : self.__replacements.get(s)}) # {'ch': s, 'toks': __toks, 'replacements': {s : self.__replacements.get(s)}}
+                                value = self._callback(ch=s, toks=__toks, replacements={s : self._replacements.get(s)})
                             except Exception as ex:
                                 print(ex)
                 return value
             
-            def normalize_commas(value, use_commas=self.__use_commas):
+            def normalize_commas(value, use_commas=self._use_commas):
                 return value.replace(',', '') if (not use_commas) else value
             if o:
                 if self._put_on_single_line(o):
                     return "{ " + normalize_commas(", ", use_commas=use_commas).join(normalize(f"{self.encode(k)}: {self.encode(el)}") for k, el in o.items()) + " }"
                 else:
                     self.indentation_level += 1
-                    f = self.__use_commas_exceptions
+                    f = self._use_commas_exceptions
                     if (f is None):
                         f = {}
-                    f_use_commas = self.__use_commas
+                    f_use_commas = self._use_commas
                     output = [self.indent_str + normalize(f"{json.dumps(k)}: {self.encode(v, use_commas=f.get(k, f_use_commas))}") for k, v in o.items()]
                     self.indentation_level -= 1
+                    if (isinstance(self._use_equals_exceptions, dict)):
+                        _replacements = []
+                        for i, __o__ in enumerate(output):
+                            for k,v in self._use_equals_exceptions.items():
+                                if (__o__.find(k) > -1) and (not v):
+                                    _regex = r"{}\s*\=".format(k)
+                                    _subst = "{}".format(k)
+                                    _result = re.sub(_regex, _subst, __o__, 0, re.MULTILINE)
+                                    if (_result):
+                                        _replacements.append(tuple([i, _result]))
+                                        break
+                        if (len(_replacements) > 0):
+                            for i,s in _replacements:
+                                output[i] = s
                     return "{\n" + normalize_commas(",\n").join(output) + "\n" + self.indent_str + "}"
             else:
                 return "{}"
@@ -239,7 +258,10 @@ class TerraformFile(TerraformSectionFactory, dict):
                 s_container_definitions = s_container_definitions + "DEFINITION" + '\n'
                 del data['container_definitions']
             _use_commas_exceptions = {'portMappings': True}
-        _json = json.dumps(data, cls=CompactJSONEncoder, indent=3, __replacements={':':'='}, __use_commas=False, __use_commas_exceptions=_use_commas_exceptions, __callback=handle_normalization)
+        _use_equals_exceptions = None
+        if ('network_configuration' in list(data.keys())):
+            _use_equals_exceptions = {'network_configuration': False}
+        _json = json.dumps(data, cls=CompactJSONEncoder, indent=3, __replacements={':':'='}, __use_commas=False, __use_commas_exceptions=_use_commas_exceptions, _use_equals_exceptions=_use_equals_exceptions, __callback=handle_normalization)
         results = '''resource "{}" {} {}
             {}{}
 {}
@@ -396,6 +418,10 @@ def get_terraform_file_contents(docker_compose_data, do_init=False, aws_ecs_clus
     resource.kwargs['task_definition'] = "aws_ecs_task_definition.my_first_task.arn"
     resource.kwargs['launch_type'] = aws_ecs_compute_engine
     resource.kwargs['desired_count'] = 1
+    resource.kwargs['network_configuration'] = {
+        'subnets': ["aws_default_subnet.default_subnet_a.id"],
+        'assign_public_ip' : True
+    }
     tf.saveResource(resource=resource)
 
 
