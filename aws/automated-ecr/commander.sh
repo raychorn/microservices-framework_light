@@ -13,6 +13,10 @@ then
 	echo "--verbose to make the output verbose for debugging purposes, if used this option must appear first."
 	echo "--push-ecr to pushes all the Docker Images into ECR."
 	echo "--clean-ecr to removes all repos from ECR."
+	echo "--single for single threaded operation (might take longer to complete)."
+	echo "--scanOnPush to enable the scan-on-push option that performs a security scan on each Image (might take longer)."
+	echo "--timetags to force all Images to be pushed even when the tag(s) have not changed."
+	echo "--detailed to produce detailed status reports (JSON) for each Image for diagnostic purposes."
 	exit
 fi
 
@@ -218,4 +222,4 @@ then
 	exit
 fi
 
-$py39 $DIR0/automated_ecr.py $1 $2 $3 $4 $5 $6 $7 $8 $9
+$py39 $DIR0/auto_ecr_terraform.py $1 $2 $3 $4 $5 $6 $7 $8 $9

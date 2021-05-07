@@ -27,11 +27,15 @@
     - [--aws_compute_engine=FARGATE](#--aws_compute_enginefargate)
     - [--json](#--json)
   - [Typical Usage(s)](#typical-usages)
-    - [Get Help](#get-help)
-    - [Push Images (verbose)](#push-images-verbose)
-    - [Clean ECR and Push Images (verbose)](#clean-ecr-and-push-images-verbose)
-    - [Clean ECR and Push Images with Detailed ECR Reports (verbose)](#clean-ecr-and-push-images-with-detailed-ecr-reports-verbose)
-    - [Clean ECR and Push Images (Security Scan Images) with Detailed ECR Reports (verbose)](#clean-ecr-and-push-images-security-scan-images-with-detailed-ecr-reports-verbose)
+    - [Auto-ECR](#auto-ecr)
+      - [Get Help](#get-help)
+      - [Push Images (verbose)](#push-images-verbose)
+      - [Clean ECR and Push Images (verbose)](#clean-ecr-and-push-images-verbose)
+      - [Clean ECR and Push Images with Detailed ECR Reports (verbose)](#clean-ecr-and-push-images-with-detailed-ecr-reports-verbose)
+      - [Clean ECR and Push Images (Security Scan Images) with Detailed ECR Reports (verbose)](#clean-ecr-and-push-images-security-scan-images-with-detailed-ecr-reports-verbose)
+    - [Auto-Terraform](#auto-terraform)
+      - [Get Help](#get-help-1)
+      - [Typical Auto Terraform Session](#typical-auto-terraform-session)
 
 
 ## About
@@ -75,13 +79,13 @@ aws_secret_access_key = ...
 2. Install the pre-requisites by issuing the following command:
 
 ```
-sudo ./ecr-push-all.sh
+sudo ./commander.sh
 ```
 
 3. Push your Images into ECR by issuing the following command:
 
 ```
-./ecr-push-all.sh [--help] [--verbose] [--push-ecr] [--clean-ecr] [--single] [--scanOnPush] [--timetags] [--detailed] [--terraform] [--terraform=/dir] [--provider=aws|azure|gcloud] [--aws_ecs_cluster=cluster-name] [--json] [--aws_region]
+./commander.sh [--help] [--verbose] [--push-ecr] [--clean-ecr] [--single] [--scanOnPush] [--timetags] [--detailed] [--terraform] [--terraform=/dir] [--provider=aws|azure|gcloud] [--aws_ecs_cluster=cluster-name] [--json] [--aws_region]
 ```
 
 ## Usage
@@ -179,32 +183,49 @@ If used this option must appear AFTER the "--terraform" option and saves the doc
 
 ## Typical Usage(s)
 
-### Get Help
+### Auto-ECR
+
+#### Get Help
 
 ```
-./ecr-push-all.sh [--help]
+./commander.sh [--help]
 ```
 
-### Push Images (verbose)
+#### Push Images (verbose)
 
 ```
-./ecr-push-all.sh [--verbose] [--push-ecr]
+./commander.sh [--verbose] [--push-ecr]
 ```
 
-### Clean ECR and Push Images (verbose)
+#### Clean ECR and Push Images (verbose)
 
 ```
-./ecr-push-all.sh [--verbose] [--push-ecr] [--clean-ecr]
+./commander.sh [--verbose] [--push-ecr] [--clean-ecr]
 ```
 
-### Clean ECR and Push Images with Detailed ECR Reports (verbose)
+#### Clean ECR and Push Images with Detailed ECR Reports (verbose)
 
 ```
-./ecr-push-all.sh [--verbose] [--push-ecr] [--clean-ecr] [--detailed]
+./commander.sh [--verbose] [--push-ecr] [--clean-ecr] [--detailed]
 ```
 
-### Clean ECR and Push Images (Security Scan Images) with Detailed ECR Reports (verbose)
+#### Clean ECR and Push Images (Security Scan Images) with Detailed ECR Reports (verbose)
 
 ```
-./ecr-push-all.sh [--verbose] [--push-ecr] [--clean-ecr] [--scanOnPush] [--detailed]
+./commander.sh [--verbose] [--push-ecr] [--clean-ecr] [--scanOnPush] [--detailed]
 ```
+
+### Auto-Terraform
+
+#### Get Help
+
+```
+./commander.sh [--help]
+```
+
+#### Typical Auto Terraform Session
+
+```
+./commander.sh --terraform=/dir --provider=aws --aws_ecs_cluster=name-the-cluster --aws_compute_engine=FARGATE --json
+```
+
