@@ -702,6 +702,7 @@ if (__name__ == '__main__'):
                     logger.info('terraform init saved -> "{}"'.format(__terraform_main_tf))
             logger.info('END!!! terraform init.')
         else:
+            logger.info('BEGIN: terraform dry-run (performing diagnostics but does not make any changes to any resources).')
             tf = Terraform(working_dir=terraform_root)
             resp = tf.init(backend=False)
 

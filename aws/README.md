@@ -13,6 +13,7 @@
   - [Usage](#usage)
     - [--help](#--help)
     - [--verbose](#--verbose)
+    - [--dryrun](#--dryrun)
     - [--clean-ecr](#--clean-ecr)
     - [--push-ecr](#--push-ecr)
     - [--single](#--single)
@@ -85,7 +86,7 @@ sudo ./commander.sh
 3. Push your Images into ECR by issuing the following command:
 
 ```
-./commander.sh [--help] [--verbose] [--push-ecr] [--clean-ecr] [--single] [--scanOnPush] [--timetags] [--detailed] [--terraform] [--terraform=/dir] [--provider=aws|azure|gcloud] [--aws_ecs_cluster=cluster-name] [--json] [--aws_region]
+./commander.sh [--help] [--verbose] [--push-ecr] [--clean-ecr] [--single] [--scanOnPush] [--timetags] [--detailed] [--terraform] [--terraform=/dir] [--provider=aws|azure|gcloud] [--aws_ecs_cluster=cluster-name] [--json] [--aws_region] [--dryrun]
 ```
 
 ## Usage
@@ -102,6 +103,17 @@ Display help information about command line options.
 ```
 Display verbose information to help diagose issues.
 ```
+
+### --dryrun
+
+```
+Performs a dry-run where no actions are taken; this can be useful for debugging.
+
+For Auto-ECR this does what you expect; does everything short of making changes to your AWS Resources like ECR.
+
+For Terraform this performs a syntax check and shows diagnostic information in case there are any issues.
+```
+
 ### --clean-ecr
 
 ```
