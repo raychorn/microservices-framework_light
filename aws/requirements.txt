@@ -6,3 +6,5 @@ boto3==1.17.44
 docker==4.4.4
 python-terraform==0.10.1
 PyYAML==5.4.1
+terraform-validator==0.6.42
+pyhcl==0.4.4

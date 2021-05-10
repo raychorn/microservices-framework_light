@@ -94,6 +94,22 @@ def setup_rotating_file_handler(logname, logfile, max_bytes, backup_count):
     l.addHandler(ch)
     return l
 
+
+def pretty_json(content, **kwargs):
+    import json as _json
+    
+    try:
+        d = _json.loads(content)
+        _indent = kwargs.get('indent')
+        if (not is_really_something(_indent, str)):
+            kwargs['indent'] = 3
+        return _json.dumps(d, **kwargs)
+    except Exception as ex:
+        was_exception = True
+        extype, ex, tb = sys.exc_info()
+        logger.exception('EXCEPTION -> {}'.format(__terraform_main_tf), ex)
+
+
 base_filename = os.path.splitext(os.path.basename(__file__))[0]
 
 log_filename = '{}{}{}{}{}{}{}_{}.log'.format('logs', os.sep, base_filename, os.sep, production_token if (is_running_production()) else development_token, os.sep, base_filename, default_timestamp(datetime.utcnow()))
@@ -717,6 +733,7 @@ if (__name__ == '__main__'):
             try:
                 with open(__terraform_main_tf, 'w') as fOut:
                     __content = get_terraform_file_contents(docker_compose_data, do_init=False, aws_ecs_cluster_name=__aws_ecs_cluster_name, aws_ecs_repo_name=__aws_ecs_repo_name, docker_compose_location=__docker_compose_location, aws_creds=aws_creds, aws_config=aws_config, aws_creds_src=__aws_creds_src__, aws_config_src=__aws_config_src__, aws_default_region=__aws_default_region__, aws_cli_ecr_describe_repos=__aws_cli_ecr_describe_repos__, aws_ecs_compute_engine=__aws_ecs_compute_engine)
+                    #_content = pretty_json(__content)  # this does not work, at this time.
                     print(__content, file=fOut)
             except Exception as ex:
                 was_exception = True

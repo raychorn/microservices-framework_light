@@ -10,6 +10,9 @@
     - [Terraform Support](#terraform-support)
     - [Prerequisites](#prerequisites)
   - [Installing](#installing)
+    - [Install Terraform via Ubuntu apt](#install-terraform-via-ubuntu-apt)
+      - [REST API for Auto-ECR](#rest-api-for-auto-ecr)
+        - [Options](#options)
   - [Usage](#usage)
     - [--help](#--help)
     - [--verbose](#--verbose)
@@ -88,6 +91,34 @@ sudo ./commander.sh
 ```
 ./commander.sh [--help] [--verbose] [--push-ecr] [--clean-ecr] [--single] [--scanOnPush] [--timetags] [--detailed] [--terraform] [--terraform=/dir] [--provider=aws|azure|gcloud] [--aws_ecs_cluster=cluster-name] [--json] [--aws_region] [--dryrun]
 ```
+
+### Install Terraform via Ubuntu apt
+
+```
+curl -fsSL https://apt.releases.hashicorp.com/gpg | sudo apt-key add -
+```
+
+```
+sudo apt-add-repository "deb [arch=$(dpkg --print-architecture)] https://apt.releases.hashicorp.com $(lsb_release -cs) main"
+```
+
+```
+sudo apt install terraform -y
+```
+
+#### REST API for Auto-ECR
+
+REST API is deployed via a Public AMI and it spins-up two DOcker Containers. One for the REST API and the other for a small MongoDB instance.
+
+##### Options
+
+1. Serialize or Batch-up Auto-ECR Jobs
+   1. Single Small VM running Auto-ECR REST API that takes AWS-Creds for each Job and runs AUto-ECR using uploaded Image files.
+      1. MongoDb database maintains the data for the jobs.
+2. Big VM Multi-Tenant Support
+   1. REST API builds each "Job" that includes the AWS-Creds for each "Job" and the Image files.
+      1. Each "Job" is run via a Docker Container that runs the AUto-ECR Command Line.
+   2. Each "Job" might require something like 128 MB RAM - this might require some work to determine.
 
 ## Usage
 
