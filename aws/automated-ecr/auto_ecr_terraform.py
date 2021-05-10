@@ -312,7 +312,7 @@ if (__name__ == '__main__'):
     terraform_root = None
 
     if (not is_running_production()):
-        if (0):
+        if (0): # Auto-ECR sample
             sys.argv.append(__push_ecr_command_line_option__)
             sys.argv.append(__single_command_line_option__)
             sys.argv.append(__clean_ecr_command_line_option__)
@@ -321,6 +321,7 @@ if (__name__ == '__main__'):
             #sys.argv.append(__dryrun_command_line_option__)
         sys.argv.append(__verbose_command_line_option__)
         sys.argv.append('{}={}'.format(__terraform_command_line_option__, '/home/raychorn/projects/python-projects/sample-terraform-data'))
+        sys.argv.append(__dryrun_command_line_option__)
         
         #sys.argv.append('{}={}'.format(__terraform_command_line_option__, '/tmp'))
         sys.argv.append('{}={}'.format(__terraform_provider_command_line_option__, 'aws'))
@@ -425,7 +426,6 @@ if (__name__ == '__main__'):
     if (__is_dry_run):
         is_dry_run = __is_dry_run
         logger.info('{}'.format(__dryrun_command_line_option__))
-
 
     if (is_dry_run):
         logger.info('Performing a dry-run with no actions taken. Disabling all actionable options.')
@@ -685,7 +685,7 @@ if (__name__ == '__main__'):
         from python_terraform import Terraform
         __terraform_main_tf = os.sep.join([terraform_root, 'main.tf'])
 
-        if (0):
+        if (not is_dry_run):
             logger.info('BEGIN: terraform init.')
             try:
                 with open(__terraform_main_tf, 'w') as fOut:
@@ -701,71 +701,71 @@ if (__name__ == '__main__'):
                 else:
                     logger.info('terraform init saved -> "{}"'.format(__terraform_main_tf))
             logger.info('END!!! terraform init.')
+        else:
+            tf = Terraform(working_dir=terraform_root)
+            resp = tf.init(backend=False)
 
-        tf = Terraform(working_dir=terraform_root)
-        resp = tf.init(backend=False)
+            logger.info('BEGIN: Reading "{}".'.format(__docker_compose_location))        
+            docker_compose_data = load_docker_compose(__docker_compose_location, logger=logger)
+            if (is_json):
+                __json = json.dumps(docker_compose_data, indent=3)
+                save_docker_compose_data(__docker_compose_location, __json)
+            logger.info('END!!! Reading "{}".'.format(__docker_compose_location))
 
-        logger.info('BEGIN: Reading "{}".'.format(__docker_compose_location))        
-        docker_compose_data = load_docker_compose(__docker_compose_location, logger=logger)
-        if (is_json):
-            __json = json.dumps(docker_compose_data, indent=3)
-            save_docker_compose_data(__docker_compose_location, __json)
-        logger.info('END!!! Reading "{}".'.format(__docker_compose_location))
+            was_exception = False
+            try:
+                with open(__terraform_main_tf, 'w') as fOut:
+                    __content = get_terraform_file_contents(docker_compose_data, do_init=False, aws_ecs_cluster_name=__aws_ecs_cluster_name, aws_ecs_repo_name=__aws_ecs_repo_name, docker_compose_location=__docker_compose_location, aws_creds=aws_creds, aws_config=aws_config, aws_creds_src=__aws_creds_src__, aws_config_src=__aws_config_src__, aws_default_region=__aws_default_region__, aws_cli_ecr_describe_repos=__aws_cli_ecr_describe_repos__, aws_ecs_compute_engine=__aws_ecs_compute_engine)
+                    print(__content, file=fOut)
+            except Exception as ex:
+                was_exception = True
+                extype, ex, tb = sys.exc_info()
+                logger.exception('EXCEPTION -> {}'.format(__terraform_main_tf), ex)
+            finally:
+                if (was_exception):
+                    logger.info('terraform file EXCEPTION!')
+                else:
+                    logger.info('terraform saved -> "{}"'.format(__terraform_main_tf))
+            
+            ret_code, s_out, err = tf.cmd('validate -json', capture_output=True)
+            logger.info('terraform validate -> ret code -> {} err -> {}'.format(ret_code, err))
 
-        was_exception = False
-        try:
-            with open(__terraform_main_tf, 'w') as fOut:
-                __content = get_terraform_file_contents(docker_compose_data, do_init=False, aws_ecs_cluster_name=__aws_ecs_cluster_name, aws_ecs_repo_name=__aws_ecs_repo_name, docker_compose_location=__docker_compose_location, aws_creds=aws_creds, aws_config=aws_config, aws_creds_src=__aws_creds_src__, aws_config_src=__aws_config_src__, aws_default_region=__aws_default_region__, aws_cli_ecr_describe_repos=__aws_cli_ecr_describe_repos__, aws_ecs_compute_engine=__aws_ecs_compute_engine)
-                print(__content, file=fOut)
-        except Exception as ex:
-            was_exception = True
-            extype, ex, tb = sys.exc_info()
-            logger.exception('EXCEPTION -> {}'.format(__terraform_main_tf), ex)
-        finally:
-            if (was_exception):
-                logger.info('terraform file EXCEPTION!')
-            else:
-                logger.info('terraform saved -> "{}"'.format(__terraform_main_tf))
-        
-        ret_code, s_out, err = tf.cmd('validate -json', capture_output=True)
-        logger.info('terraform validate -> ret code -> {} err -> {}'.format(ret_code, err))
+            was_exception = False
+            try:
+                __terraform_main_out_tf = os.sep.join([terraform_root, 'main_tf.json'])
+                with open(__terraform_main_out_tf, 'w') as fOut:
+                    print(s_out, file=fOut)
+            except Exception as ex:
+                was_exception = True
+                extype, ex, tb = sys.exc_info()
+                logger.exception('EXCEPTION -> {}'.format(__terraform_main_out_tf), ex)
+            finally:
+                if (was_exception):
+                    logger.info('terraform file validation EXCEPTION!')
+                else:
+                    logger.info('terraform validation saved -> "{}"'.format(__terraform_main_out_tf))
 
-        was_exception = False
-        try:
-            __terraform_main_out_tf = os.sep.join([terraform_root, 'main_tf.json'])
-            with open(__terraform_main_out_tf, 'w') as fOut:
-                print(s_out, file=fOut)
-        except Exception as ex:
-            was_exception = True
-            extype, ex, tb = sys.exc_info()
-            logger.exception('EXCEPTION -> {}'.format(__terraform_main_out_tf), ex)
-        finally:
-            if (was_exception):
-                logger.info('terraform file validation EXCEPTION!')
-            else:
-                logger.info('terraform validation saved -> "{}"'.format(__terraform_main_out_tf))
+            s_text = ' '.join([str(r).replace('\n', ' ').strip() for r in resp])
+            rows_text = reformat_text(s_text, width=120)
+            s_out = '\n'.join(rows_text)
+            
+            if (is_verbose):
+                logger.info('terraform init -> \n{}'.format(s_out))
 
-        s_text = ' '.join([str(r).replace('\n', ' ').strip() for r in resp])
-        rows_text = reformat_text(s_text, width=120)
-        s_out = '\n'.join(rows_text)
-        
-        if (is_verbose):
-            logger.info('terraform init -> \n{}'.format(s_out))
-
-        was_exception = False
-        try:
-            __terraform_validation_report = os.sep.join([terraform_root, 'main_tf-validation.txt'])
-            with open(__terraform_validation_report, 'w') as fOut:
-                print(s_out, file=fOut)
-        except Exception as ex:
-            was_exception = True
-            extype, ex, tb = sys.exc_info()
-            logger.exception('EXCEPTION -> {}'.format(__terraform_validation_report), ex)
-        finally:
-            if (was_exception):
-                logger.info('terraform file validation report EXCEPTION!')
-            else:
-                logger.info('terraform validation report saved -> "{}"'.format(__terraform_validation_report))
+            was_exception = False
+            try:
+                __terraform_validation_report = os.sep.join([terraform_root, 'main_tf-validation.txt'])
+                with open(__terraform_validation_report, 'w') as fOut:
+                    print(s_out, file=fOut)
+            except Exception as ex:
+                was_exception = True
+                extype, ex, tb = sys.exc_info()
+                logger.exception('EXCEPTION -> {}'.format(__terraform_validation_report), ex)
+            finally:
+                if (was_exception):
+                    logger.info('terraform file validation report EXCEPTION!')
+                else:
+                    logger.info('terraform validation report saved -> "{}"'.format(__terraform_validation_report))
 
         logger.info('END!!! Terraform Processing')
         
