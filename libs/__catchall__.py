@@ -47,7 +47,8 @@ def __catch_all__(path, request=None, response_handler=None, __json=None, logger
         return request.get_json() if (is_serverMode_flask()) else __json if ((not callable(is_serverMode_django)) or (not is_serverMode_django())) else json.loads(request.body.decode("utf-8"))
     the_path = [p for p in path.split('/') if (len(str(p)) > 0)]
     the_response = {"path": '/'.join(the_path[1:])}
-    __fp_plugins__ = [__env__.get('plugins')]
+    __fp_plugins__ = __env__.get('plugins')
+    __fp_plugins__ = [__fp_plugins__] if (not isinstance(__fp_plugins__, list)) else __fp_plugins__ if (isinstance(__fp_plugins__, list)) else [__fp_plugins__]
     if (request.method in ['POST', 'PUT', 'DELETE']):
         try:
             uuid = the_path[0] if (len(the_path) > 0) else None

@@ -161,6 +161,8 @@ ignoring_image_names = [__docker_hello_world__[-1]]
 
 has_been_tagged = lambda name:str(name).find('.amazonaws.com/') > -1
 
+__aws_creds_command_line_option__ = '--aws-creds'
+__aws_config_command_line_option__ = '--aws-config'
 __clean_ecr_command_line_option__ = '--clean-ecr'
 __push_ecr_command_line_option__ = '--push-ecr'
 __verbose_command_line_option__ = '--verbose'
@@ -328,6 +330,9 @@ if (__name__ == '__main__'):
     terraform_root = None
 
     if (not is_running_production()):
+        sys.argv.append('{}={}'.format(__aws_creds_command_line_option__, "/mnt/c/Users/Owner/OneDrive/#ssh/#Amazon AWS+EC2/11-06-2020/rootkey.csv"))
+        sys.argv.append('{}={}'.format(__aws_config_command_line_option__, "/home/raychorn/projects/python-projects/microservices-framework_light/aws/.aws/config"))
+
         if (0): # Auto-ECR sample
             sys.argv.append(__push_ecr_command_line_option__)
             sys.argv.append(__single_command_line_option__)
@@ -375,6 +380,26 @@ if (__name__ == '__main__'):
     is_detailed = any([str(arg).find(__detailed_ecr_report_command_line_option__) > -1 for arg in sys.argv])
     if (is_detailed):
         logger.info('{}'.format(__detailed_ecr_report_command_line_option__))
+
+    is_aws_creds = False
+    __aws_creds_flag, __aws_creds_fpath = parse_complex_command_line_option(sys.argv, find_something=__aws_creds_command_line_option__)
+    is_aws_creds = is_really_something_with_stuff(__aws_creds_flag, str)
+    if (is_really_something_with_stuff(__aws_creds_fpath, str)):
+        assert (os.path.exists(__aws_creds_fpath)), 'Cannot find the aws creds file named "{}".'.format(__aws_creds_fpath)
+        if (os.path.exists(__aws_creds_fpath)):
+            __aws_creds_src__ = __aws_creds_fpath
+    if (is_aws_creds):
+        logger.info('INFO: {}{}'.format(__aws_creds_command_line_option__, ' :: aws creds file "{}"'.format(__aws_creds_src__) if (is_really_something(__aws_creds_src__, str) and os.path.exists(__aws_creds_src__)) else ''))
+
+    is_aws_config = False
+    __aws_config_flag, __aws_config_fpath = parse_complex_command_line_option(sys.argv, find_something=__aws_config_command_line_option__)
+    is_aws_config = is_really_something_with_stuff(__aws_config_flag, str)
+    if (is_really_something_with_stuff(__aws_config_fpath, str)):
+        assert (os.path.exists(__aws_config_fpath)), 'Cannot find the aws config file named "{}".'.format(__aws_config_fpath)
+        if (os.path.exists(__aws_config_fpath)):
+            __aws_config_src__ = __aws_config_fpath
+    if (is_aws_config):
+        logger.info('INFO: {}{}'.format(__aws_config_command_line_option__, ' :: aws config file "{}"'.format(__aws_config_src__) if (is_really_something(__aws_config_src__, str) and os.path.exists(__aws_config_src__)) else ''))
 
     is_terraform = False
     __terraform_flag, __terraform_root = parse_complex_command_line_option(sys.argv, find_something=__terraform_command_line_option__)
@@ -459,8 +484,10 @@ if (__name__ == '__main__'):
                 os.mkdir(terraform_root)
                 logger.info('The terraform root "{}" has been created.'.format(terraform_root))
     
-    __aws_creds_src__ = find_aws_creds_or_config_src(__aws_creds_src__)
-    __aws_config_src__ = find_aws_creds_or_config_src(__aws_config_src__)
+    if (not is_aws_creds):
+        __aws_creds_src__ = find_aws_creds_or_config_src(__aws_creds_src__)
+    if (not is_aws_config):
+        __aws_config_src__ = find_aws_creds_or_config_src(__aws_config_src__)
     
     if (is_pushing_ecr or is_cleaning_ecr or is_terraform):
         get_aws_creds_and_config(aws_creds=aws_creds, aws_config=aws_config, aws_creds_src=__aws_creds_src__, aws_config_src=__aws_config_src__, logger=logger)

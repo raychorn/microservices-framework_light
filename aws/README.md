@@ -16,8 +16,10 @@
   - [Usage](#usage)
     - [--help](#--help)
     - [--verbose](#--verbose)
-    - [--dryrun](#--dryrun)
     - [--clean-ecr](#--clean-ecr)
+    - [--aws-creds](#--aws-creds)
+    - [--dryrun](#--dryrun)
+    - [--clean-ecr](#--clean-ecr-1)
     - [--push-ecr](#--push-ecr)
     - [--single](#--single)
     - [--scanOnPush](#--scanonpush)
@@ -133,6 +135,18 @@ Display help information about command line options.
 
 ```
 Display verbose information to help diagose issues.
+```
+
+### --clean-ecr
+
+```
+removes all known repos from the ECR - this is for development purposes only.
+```
+
+### --aws-creds
+
+```
+Specifies the AWS Creds file that could be the typical rootkey.csv file or you may configure as shown above in this document.
 ```
 
 ### --dryrun
