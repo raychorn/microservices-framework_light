@@ -126,14 +126,23 @@ def get_aws_creds_and_config(aws_creds=None, aws_config=None, aws_creds_src=None
         resp = handle_aws_creds_or_config(aws_config_src, target=aws_config)
 
 
-def get_ecr_client(aws_creds=None, aws_config=None, aws_creds_src=None, aws_config_src=None, aws_default_region=None, logger=None):
-    get_aws_creds_and_config(aws_creds=aws_creds, aws_config=aws_config, aws_creds_src=aws_creds_src, aws_config_src=aws_config_src, logger=logger)
+def get_ecr_client(is_aws_creds_profile=False, aws_creds=None, aws_config=None, aws_creds_src=None, aws_config_src=None, aws_default_region=None, logger=None):
+    if (not is_aws_creds_profile):
+        get_aws_creds_and_config(aws_creds=aws_creds, aws_config=aws_config, aws_creds_src=aws_creds_src, aws_config_src=aws_config_src, logger=logger)
 
-    __aws_access_key_id = aws_creds.get(list(aws_creds.keys())[0], {}).get('aws_access_key_id')
-    assert is_really_something(__aws_access_key_id, str), 'Missing the aws_access_key_id, check your config files.'
+        __aws_access_key_id = aws_creds.get(list(aws_creds.keys())[0], {}).get('aws_access_key_id')
+        assert is_really_something(__aws_access_key_id, str), 'Missing the aws_access_key_id, check your config files.'
 
-    __aws_secret_access_key = aws_creds.get(list(aws_creds.keys())[0], {}).get('aws_secret_access_key')
-    assert is_really_something(__aws_secret_access_key, str), 'Missing the aws_secret_access_key, check your config files.'
+        __aws_secret_access_key = aws_creds.get(list(aws_creds.keys())[0], {}).get('aws_secret_access_key')
+        assert is_really_something(__aws_secret_access_key, str), 'Missing the aws_secret_access_key, check your config files.'
+    else:
+        _id = aws_creds.get('aws_access_key_id', aws_creds.get('AWSAccessKeyId'))
+        assert is_really_something(_id, str), 'Missing the "aws_access_key_id" and "AWSAccessKeyId", check your config files or command-line options.'
+        __aws_access_key_id = _id
+
+        _key = aws_creds.get('aws_secret_access_key', aws_creds.get('AWSSecretKey'))
+        assert is_really_something(_key, str), 'Missing the "aws_secret_access_key" and "AWSSecretKey", check your config files or command-line options.'
+        __aws_secret_access_key = _key
 
     ecr_client = boto3.client(
         'ecr',

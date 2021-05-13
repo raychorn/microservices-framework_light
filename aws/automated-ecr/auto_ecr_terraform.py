@@ -162,6 +162,8 @@ ignoring_image_names = [__docker_hello_world__[-1]]
 has_been_tagged = lambda name:str(name).find('.amazonaws.com/') > -1
 
 __aws_creds_command_line_option__ = '--aws-creds'
+__aws_creds_profile_command_line_option__ = '--aws-profile'
+
 __aws_config_command_line_option__ = '--aws-config'
 __clean_ecr_command_line_option__ = '--clean-ecr'
 __push_ecr_command_line_option__ = '--push-ecr'
@@ -332,6 +334,7 @@ if (__name__ == '__main__'):
     if (not is_running_production()):
         sys.argv.append('{}={}'.format(__aws_creds_command_line_option__, "/mnt/c/Users/Owner/OneDrive/#ssh/#Amazon AWS+EC2/11-06-2020/rootkey.csv"))
         sys.argv.append('{}={}'.format(__aws_config_command_line_option__, "/home/raychorn/projects/python-projects/microservices-framework_light/aws/.aws/config"))
+        #sys.argv.append('{}={}'.format(__aws_creds_profile_command_line_option__, "default"))
 
         if (0): # Auto-ECR sample
             sys.argv.append(__push_ecr_command_line_option__)
@@ -342,7 +345,7 @@ if (__name__ == '__main__'):
             #sys.argv.append(__dryrun_command_line_option__)
         sys.argv.append(__verbose_command_line_option__)
         sys.argv.append('{}={}'.format(__terraform_command_line_option__, '/home/raychorn/projects/python-projects/sample-terraform-data'))
-        sys.argv.append(__dryrun_command_line_option__)
+        #sys.argv.append(__dryrun_command_line_option__)
         
         #sys.argv.append('{}={}'.format(__terraform_command_line_option__, '/tmp'))
         sys.argv.append('{}={}'.format(__terraform_provider_command_line_option__, 'aws'))
@@ -390,6 +393,15 @@ if (__name__ == '__main__'):
             __aws_creds_src__ = __aws_creds_fpath
     if (is_aws_creds):
         logger.info('INFO: {}{}'.format(__aws_creds_command_line_option__, ' :: aws creds file "{}"'.format(__aws_creds_src__) if (is_really_something(__aws_creds_src__, str) and os.path.exists(__aws_creds_src__)) else ''))
+
+    is_aws_creds_profile = False
+    __aws_creds_profile_flag, __aws_creds_profile = parse_complex_command_line_option(sys.argv, find_something=__aws_creds_profile_command_line_option__)
+    is_aws_creds_profile = is_really_something_with_stuff(__aws_creds_profile_flag, str)
+    if (is_really_something_with_stuff(__aws_creds_profile, str)):
+        assert len(__aws_creds_profile), 'Cannot proceed without the AWS Creds Profile "{}".'.format(__aws_creds_profile)
+    if (is_aws_creds_profile):
+        logger.info('INFO: {}{}'.format(__aws_creds_profile_command_line_option__, ' :: aws creds profile "{}"'.format(__aws_creds_profile) if (is_really_something_with_stuff(__aws_creds_profile, str)) else ''))
+
 
     is_aws_config = False
     __aws_config_flag, __aws_config_fpath = parse_complex_command_line_option(sys.argv, find_something=__aws_config_command_line_option__)
@@ -497,11 +509,18 @@ if (__name__ == '__main__'):
         
         if (is_really_something(__aws_region_flag, str)):
             __d['region'] = __aws_region if (is_really_something(__aws_region, str)) else __d.get('region', __aws_default_region__)
-        
+
         aws_config[list(aws_config.keys())[0]] = __d
+
+        if (is_aws_creds_profile):
+            aws_creds = aws_creds.get(__aws_creds_profile, {})
+            assert is_really_something_with_stuff(aws_creds.get('aws_access_key_id'), str) and is_really_something_with_stuff(aws_creds.get('aws_secret_access_key'), str), 'Cannot proceed without the AWS Creds Profile "{}" ("AWSAccessKeyId") and the one specified seems to be missing or invalid.'.format(__aws_creds_profile)
+        else:
+            aws_creds = aws_creds.get('default', {})
+            assert is_really_something_with_stuff(aws_creds.get('aws_access_key_id'), str) and is_really_something_with_stuff(aws_creds.get('aws_secret_access_key'), str), 'Cannot proceed without the AWS Creds Profile "{}" ("AWSAccessKeyId") and the default one specified seems to be missing or invalid.'.format('default')
         
         if (is_pushing_ecr or is_cleaning_ecr):
-            ecr_client = get_ecr_client(aws_creds=aws_creds, aws_config=aws_config, logger=logger)
+            ecr_client = get_ecr_client(aws_creds=aws_creds, aws_config=aws_config, is_aws_creds_profile=is_aws_creds_profile, logger=logger)
 
     if (is_pushing_ecr):
         import docker

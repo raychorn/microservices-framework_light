@@ -18,6 +18,7 @@
     - [--verbose](#--verbose)
     - [--clean-ecr](#--clean-ecr)
     - [--aws-creds](#--aws-creds)
+      - [--aws-profile](#--aws-profile)
     - [--dryrun](#--dryrun)
     - [--clean-ecr](#--clean-ecr-1)
     - [--push-ecr](#--push-ecr)
@@ -149,6 +150,11 @@ removes all known repos from the ECR - this is for development purposes only.
 Specifies the AWS Creds file that could be the typical rootkey.csv file or you may configure as shown above in this document.
 ```
 
+#### --aws-profile
+
+```
+Specifies the AWS Creds Profile that matches the one found in the typical rootkey.csv file or it will default to "default".
+```
 ### --dryrun
 
 ```
