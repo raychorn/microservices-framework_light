@@ -1,4 +1,0 @@
-{
-    "python.pythonPath": ".venv394/bin/python3.9",
-    "python.formatting.provider": "black"
-}

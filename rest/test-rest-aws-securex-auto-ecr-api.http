@@ -1,4 +1,4 @@
-###
+### REST Client, humao.rest-client
 
 GET http://127.0.0.1:9999/ HTTP/1.1
 
@@ -8,15 +8,15 @@ GET http://3.137.105.169/4a1bf01e-0693-48c5-a52b-fc275205c1d8/__directory__/?DEB
 
 ###
 
-GET http://172.27.2.35:9999/4a1bf01e-0693-48c5-a52b-fc275205c1d8/__directory__/?DEBUG=1 HTTP/1.1
+GET http://172.19.152.76:9999/4a1bf01e-0693-48c5-a52b-fc275205c1d8/__directory__/?DEBUG=1 HTTP/1.1
 
 ###
 
-GET http://172.27.2.35:9999/4a1bf01e-0693-48c5-a52b-fc275205c1d8/auto-ecr-rest-api-v1/get-all-jobs/?debug=1 HTTP/1.1
+GET http://172.19.152.76:9999/4a1bf01e-0693-48c5-a52b-fc275205c1d8/auto-ecr-rest-api-v1/get-all-jobs/?debug=1 HTTP/1.1
 
 ###
 
-POST http://172.27.2.35:9999/4a1bf01e-0693-48c5-a52b-fc275205c1d8/auto-ecr-rest-api-v1/add-job/?debug=1 HTTP/1.1
+POST http://172.19.152.76:9999/4a1bf01e-0693-48c5-a52b-fc275205c1d8/auto-ecr-rest-api-v1/add-job/?debug=1 HTTP/1.1
 content-type: application/json
 
 {
@@ -27,11 +27,11 @@ content-type: application/json
 
 ###
 
-GET http://172.27.2.35:9999/4a1bf01e-0693-48c5-a52b-fc275205c1d8/auto-ecr-rest-api-v1/get-one-job/609d345d439ccec1ea6052d7/ HTTP/1.1
+GET http://172.19.152.76:9999/4a1bf01e-0693-48c5-a52b-fc275205c1d8/auto-ecr-rest-api-v1/get-one-job/609d345d439ccec1ea6052d7/ HTTP/1.1
 
 ###
 
-POST http://172.27.2.35:9999/4a1bf01e-0693-48c5-a52b-fc275205c1d8/auto-ecr-rest-api-v1/update-job/609d345d439ccec1ea6052d7/?debug=1 HTTP/1.1
+POST http://172.19.152.76:9999/4a1bf01e-0693-48c5-a52b-fc275205c1d8/auto-ecr-rest-api-v1/update-job/609d345d439ccec1ea6052d7/?debug=1 HTTP/1.1
 content-type: application/json
 
 {
@@ -42,7 +42,7 @@ content-type: application/json
 
 ###
 
-DELETE http://172.27.2.35:9999/4a1bf01e-0693-48c5-a52b-fc275205c1d8/auto-ecr-rest-api-v1/delete-all-jobs/?debug=1 HTTP/1.1
+DELETE http://172.19.152.76:9999/4a1bf01e-0693-48c5-a52b-fc275205c1d8/auto-ecr-rest-api-v1/delete-all-jobs/?debug=1 HTTP/1.1
 content-type: application/json
 
 {
@@ -50,7 +50,7 @@ content-type: application/json
 
 ###
 
-DELETE http://172.27.2.35:9999/4a1bf01e-0693-48c5-a52b-fc275205c1d8/auto-ecr-rest-api-v1/delete-one-job/609d38bd439ccec1ea6052ed/?debug=1 HTTP/1.1
+DELETE http://172.19.152.76:9999/4a1bf01e-0693-48c5-a52b-fc275205c1d8/auto-ecr-rest-api-v1/delete-one-job/609d38bd439ccec1ea6052ed/?debug=1 HTTP/1.1
 content-type: application/json
 
 {
@@ -58,7 +58,7 @@ content-type: application/json
 
 ###
 
-DELETE http://172.27.2.35:9999/4a1bf01e-0693-48c5-a52b-fc275205c1d8/auto-ecr-rest-api-v1/delete-one-job/?debug=1 HTTP/1.1
+DELETE http://172.19.152.76:9999/4a1bf01e-0693-48c5-a52b-fc275205c1d8/auto-ecr-rest-api-v1/delete-one-job/?debug=1 HTTP/1.1
 content-type: application/json
 
 {
