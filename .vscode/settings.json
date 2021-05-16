@@ -1,0 +1,5 @@
+{
+    "DockerRun.DisableAutoGenerateConfig": true,
+    "python.pythonPath": ".venv395/bin/python3.9",
+    "python.formatting.provider": "black"
+}
