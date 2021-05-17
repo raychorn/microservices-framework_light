@@ -13,7 +13,7 @@ def conversion_task(item=None):
     h = item[-1].hex()
     hb = h.encode("utf-8")
     h_crc32 = binascii.crc32(hb)
-    c1 = zlib.compress(hb)
+    c1 = zlib.compress(hb, zlib.Z_BEST_SPEED)
     c = base64.b64encode(c1)
     n = len(c) - len(h)
     return {'indx': item[0], 'hex': h, 'compressed': c, 'diff': n, 'crc32':h_crc32}
