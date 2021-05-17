@@ -8,12 +8,14 @@ def conversion_task(item=None):
     return [item[0], item[-1].hex()]
 
 
-def read_binary_file(fpath, chunksize=2048, max_workers=100):
+def read_binary_file(fpath, chunksize=2048, max_workers=0, multiprocess=False):
     startTime = time.time()
     datum = []
     wait_for = []
     if (max_workers > 0):
         executor = futures.ThreadPoolExecutor(max_workers=max_workers)
+    elif (multiprocess):
+        executor = futures.ProcessPoolExecutor(max_workers=max_workers)
     with open(fpath, 'rb') as fIn:
         num = 0
         while (data := fIn.read(chunksize)):
@@ -25,26 +27,55 @@ def read_binary_file(fpath, chunksize=2048, max_workers=100):
             
     if (max_workers == 0):
         print('{} chunks.'.format(len(datum)))
-    else:
+    elif (max_workers > 0):
         for f in futures.as_completed(wait_for):
             datum.append(f.result())
         print('{} chunks.'.format(len(datum)))
         
-    if (max_workers == 0):
-        assert num == len(datum), 'Something went wrong with the threaded thing because there should be {} chunks but there were {} chunks seen.'.format(num, len(datum))
-    else:
-        assert num == len(datum), 'Something went wrong with the threaded thing because there should be {} chunks but there were {} chunks seen.'.format(num, len(datum))
+    assert num == len(datum), 'Something went wrong with the threaded thing because there should be {} chunks but there were {} chunks seen.'.format(num, len(datum))
     executionTime = (time.time() - startTime)
     print('Done. {:.2f}'.format(executionTime))
     return executionTime
-    
-dt1 = read_binary_file('/home/raychorn/projects/python-projects/securex.ai/data/docker-images/raychorn-appgenerator-dev-latest.tar.gz', max_workers=0)
-dt2 = read_binary_file('/home/raychorn/projects/python-projects/securex.ai/data/docker-images/raychorn-appgenerator-dev-latest.tar.gz', max_workers=500)
 
-if (dt1 < dt2):
-    print('#1 {} ran faster than #2 {}'.format(dt1, dt2))
-else:
-    print('#1 {} ran slower than #2 {}'.format(dt1, dt2))
+results = {}
+the_results = []
+the_results_slower = []
+for chsiz in range(1, 8192):
+    chunksize=chsiz*128
+    print('BEGIN: {} -> {}'.format(chsiz, chunksize))
+    results['dt1-single-core-{}'.format(chunksize)] = r = read_binary_file('/home/raychorn/projects/python-projects/securex.ai/data/docker-images/raychorn-appgenerator-dev-latest.tar.gz', chunksize=chunksize, max_workers=0, multiprocess=False)
+    print('END!!! {} -> {}'.format(chsiz, chunksize))
+    if (len(the_results) > 0) and (r > the_results[-1]):
+        the_results_slower.append({'chsiz':chsiz, 'r':r, '-1':the_results[-1]})
+        print('the_results_slower -> {}'.format(len(the_results_slower)))
+        if (len(the_results_slower) >= 50):
+            print('Stopping...')
+            break
+    the_results.append(r)
+_min = min(results.items(), key=lambda x: x[1])
+print('{} is faster'.format(_min))
+print()
+
+print('BEGIN: the_results (last 10)')
+for r in the_results[-10:]:
+    print('{}'.format(r))
+print('END!!! the_results (last 10)')
+print()
+
+print('BEGIN: the_results_slower')
+for r in the_results_slower:
+    print('{}'.format(r))
+print('END!!! the_results_slower')
+print()
+
+chunksize=8192
+results['dt1-single-core'] = read_binary_file('/home/raychorn/projects/python-projects/securex.ai/data/docker-images/raychorn-appgenerator-dev-latest.tar.gz', chunksize=chunksize, max_workers=0, multiprocess=False)
+results['dt2-multi-thread'] = read_binary_file('/home/raychorn/projects/python-projects/securex.ai/data/docker-images/raychorn-appgenerator-dev-latest.tar.gz', chunksize=chunksize, max_workers=1100, multiprocess=False)
+results['dt3-multi-process'] = read_binary_file('/home/raychorn/projects/python-projects/securex.ai/data/docker-images/raychorn-appgenerator-dev-latest.tar.gz', chunksize=chunksize, max_workers=800, multiprocess=True)
+
+_min = min(results.items(), key=lambda x: x[1])
+
+print('{} is faster'.format(_min))
 
 headers={'Content-Type':'application/gzip'}
 f = open('/home/raychorn/projects/python-projects/securex.ai/data/docker-images/raychorn-appgenerator-dev-latest.tar.gz', 'rb')
