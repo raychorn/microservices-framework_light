@@ -87,6 +87,8 @@ def __catch_all__(path, request=None, response_handler=None, __json=None, logger
                             if (not (os.path.exists(fp_plugins_initpy) and (os.path.isfile(fp_plugins_initpy)))):
                                 with open(fp_plugins_initpy, 'w') as fOut:
                                     fOut.write('{}\n'.format('#'*40))
+                                    fOut.write('# (c). Copyright, Vyper Logix Corp, All Rights Reserved.\n')
+                                    fOut.write('{}\n'.format('#'*40))
                                     fOut.write('\n\n')
                                     fOut.flush()
                             __is__ = eval(request_query_params(request, is_serverMode_flask=is_serverMode_flask, is_serverMode_django=is_serverMode_django).get('DEBUG', False))
