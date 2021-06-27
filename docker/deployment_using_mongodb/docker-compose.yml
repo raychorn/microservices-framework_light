@@ -1,0 +1,23 @@
+version: "3.9"
+services:
+    webserver:
+        image: raychorn/ubuntu_focal_all_pythons:latest
+        container_name: vyperapi
+        restart: unless-stopped
+        volumes:
+            - ..:/workspaces/microservices-framework/
+        ports:
+            - "9000:9000"
+        env_file:
+            - .env
+        #entrypoint:
+        #    - /bin/bash
+        tty: true
+        stdin_open: true
+        command: ["/workspaces/microservices-framework/runserver.sh"]
+        deploy:
+            resources:
+                limits:
+                    cpus: '1.0'
+                    memory: 1000M
+
